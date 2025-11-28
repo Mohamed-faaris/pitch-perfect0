@@ -24,9 +24,7 @@ export const rolesEnum = pgEnum("roles", ["admin", "superAdmin", "staff"]);
 
 export const managers = createTable("manager", (d) => ({
   id: d.integer().primaryKey().generatedByDefaultAsIdentity(),
-  email: d.varchar({ length: 256 }).notNull().unique(),
-  name: d.varchar({ length: 128 }).notNull(),
-  passwordHash: d.varchar({ length: 256 }).notNull(),
+  authId: d.text().notNull().unique().references(() => user.id), // references auth user table
   role: rolesEnum().notNull().default("staff"),
 
   createdAt: d
@@ -255,7 +253,11 @@ export const couponUses = createTable(
 /* -------------------- RELATIONS -------------------- */
 
 // Managers Relations
-export const managersRelations = relations(managers, ({ many }) => ({
+export const managersRelations = relations(managers, ({ many, one }) => ({
+  authUser: one(user, {
+    fields: [managers.authId],
+    references: [user.id],
+  }),
   timeSlots: many(timeSlots),
   banners: many(banners),
   logs: many(managerLogs),
@@ -397,9 +399,13 @@ export const verification = pgTable("verification", {
   ),
 });
 
-export const userRelations = relations(user, ({ many }) => ({
+export const userRelations = relations(user, ({ many, one }) => ({
   account: many(account),
   session: many(session),
+  manager: one(managers, {
+    fields: [user.id],
+    references: [managers.authId],
+  }),
 }));
 
 export const accountRelations = relations(account, ({ one }) => ({

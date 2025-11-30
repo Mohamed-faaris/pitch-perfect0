@@ -88,7 +88,8 @@ export const customers = createTable(
 export const bookingStatusEnum = pgEnum("booking_status", [
   "advancePaid",
   "fullPaid",
-  "pending",
+  "fullPending",
+  "advancePending",
   "wontCome",
   "paymentFailed",
 ]);

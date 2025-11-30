@@ -12,7 +12,7 @@ export default async function AdminPanelLayout({
   const { session, manager } = await requireManager();
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-md flex-col bg-background">
+    <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col bg-background">
       <AdminTopBar
         user={{
           name: session.user.name,

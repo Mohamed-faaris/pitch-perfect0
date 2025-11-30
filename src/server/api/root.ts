@@ -2,6 +2,7 @@ import { postRouter } from "~/server/api/routers/post";
 import { customerRouter } from "~/server/api/routers/customer";
 import { timeSlotRouter } from "~/server/api/routers/timeSlot";
 import { bookingRouter } from "~/server/api/routers/booking";
+import { adminRouter, superAdminRouter } from "~/server/api/routers/admin";
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 
 /**
@@ -10,6 +11,8 @@ import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
  * All routers added in /api/routers should be manually added here.
  */
 export const appRouter = createTRPCRouter({
+  admin: adminRouter,
+  superAdmin: superAdminRouter,
   post: postRouter,
   customer: customerRouter,
   timeSlot: timeSlotRouter,

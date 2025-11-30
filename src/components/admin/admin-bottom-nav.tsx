@@ -69,7 +69,7 @@ export function AdminBottomNav({ role }: { role: ManagerRole }) {
   );
 
   return (
-    <nav className="sticky bottom-0 border-t border-border/60 bg-background/90 px-2 py-3 backdrop-blur">
+    <nav className="sticky bottom-0 left-0 right-0 border-t border-border/60 bg-background/90 px-2 py-3 backdrop-blur">
       <div className="flex items-center gap-1 text-xs">
         {filteredItems.map((item) => {
           const Icon = item.icon;

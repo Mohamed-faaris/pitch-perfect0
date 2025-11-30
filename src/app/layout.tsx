@@ -6,6 +6,7 @@ import { Geist } from "next/font/google";
 import { TRPCReactProvider } from "~/trpc/react";
 import { ThemeProvider } from "~/components/theme-provider";
 import { ThemeToggle } from "~/components/theme-toggle";
+import BottomNav from "~/components/bottom-nav";
 
 export const metadata: Metadata = {
   title: "Create T3 App",
@@ -30,10 +31,13 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <div className="absolute top-2 left-2">
+          <div className="absolute top-2 right-2 z-40">
             <ThemeToggle />
           </div>
-          <TRPCReactProvider>{children}</TRPCReactProvider>
+          <TRPCReactProvider>
+            <div className="min-h-screen pb-20">{children}</div>
+            <BottomNav />
+          </TRPCReactProvider>
         </ThemeProvider>
       </body>
     </html>

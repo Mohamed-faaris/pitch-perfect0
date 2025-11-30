@@ -1,5 +1,7 @@
 "use client";
 
+import { usePathname } from "next/navigation";
+
 import { ThemeToggle } from "~/components/theme-toggle";
 import { useLanguage } from "~/lib/language-context";
 import { cn } from "~/lib/utils";
@@ -7,7 +9,12 @@ import { cn } from "~/lib/utils";
 const languages: Array<"en" | "ta"> = ["en", "ta"];
 
 export function TopBar() {
+  const pathname = usePathname();
   const { language, setLanguage } = useLanguage();
+
+  if (pathname?.startsWith("/admin")) {
+    return null;
+  }
 
   return (
     <header className="sticky top-0 z-50 flex items-center justify-between border-b border-border/60 bg-background/95 px-4 py-4 backdrop-blur">
@@ -19,7 +26,7 @@ export function TopBar() {
               key={code}
               type="button"
               onClick={() => setLanguage(code)}
-              aria-pressed={language === code ? "true" : "false"}
+              aria-pressed={language === code}
               className={cn(
                 "rounded-full px-3 py-1 font-medium transition-colors",
                 language === code

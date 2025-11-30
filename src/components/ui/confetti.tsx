@@ -85,13 +85,9 @@ const ConfettiComponent = forwardRef<ConfettiRef, Props>((props, ref) => {
 
   useEffect(() => {
     if (!manualstart) {
-      ;(async () => {
-        try {
-          await fire()
-        } catch (error) {
-          console.error("Confetti effect error:", error)
-        }
-      })()
+      void fire().catch((error) => {
+        console.error("Confetti effect error:", error)
+      })
     }
   }, [manualstart, fire])
 

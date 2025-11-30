@@ -1,6 +1,5 @@
 import { db } from "~/server/db";
 import { timeSlots } from "~/server/db/schema";
-import { eq } from "drizzle-orm";
 
 /**
  * Creates 24 one-hour time slots for 3 days in advance

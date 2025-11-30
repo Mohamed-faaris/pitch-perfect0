@@ -114,7 +114,7 @@ export const bookings = createTable("booking", (d) => ({
 
   createdAt: d.timestamp({ withTimezone: true }).defaultNow().notNull(),
   updatedAt: d.timestamp({ withTimezone: true }).$onUpdate(() => new Date()),
-  status: bookingStatusEnum().notNull().default("pending"),
+  status: bookingStatusEnum().notNull().default("advancePending"),
 }));
 
 /* 5. Banners (references managers) */
@@ -349,10 +349,10 @@ export const configTable = createTable("config", (d) => ({
   maintenanceMessage: d.text().notNull().default(""),
 
   fullPaymentMode: d.boolean().notNull().default(false),
-  
+
   slotIntervalMinutes: d.integer().notNull().default(60),
   numberOfSlotsPerDay: d.integer().notNull().default(24),
-  
+
   bookingBufferMinutes: d.integer().notNull().default(3),// minutes before payment deadline to open slot again
 
   slotsVisibleDaysInAdvance: d.integer().notNull().default(4), // number of days in advance slots are visible to customers

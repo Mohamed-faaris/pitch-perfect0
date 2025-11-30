@@ -6,6 +6,7 @@ import { Geist } from "next/font/google";
 import { TRPCReactProvider } from "~/trpc/react";
 import { ThemeProvider } from "~/components/theme-provider";
 import { ThemeToggle } from "~/components/theme-toggle";
+import { BottomNavigation } from "~/components/bottom-navigation";
 
 export const metadata: Metadata = {
   title: "Create T3 App",
@@ -34,6 +35,7 @@ export default function RootLayout({
             <ThemeToggle />
           </div>
           <TRPCReactProvider>{children}</TRPCReactProvider>
+          <BottomNavigation />
         </ThemeProvider>
       </body>
     </html>

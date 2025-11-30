@@ -39,6 +39,7 @@ export const timeSlotStatusEnum = pgEnum("time_slot_status", [
   "available",
   "booked",
   "unavailable",
+  "bookingInProgress",
 ]);
 
 export const timeSlots = createTable(

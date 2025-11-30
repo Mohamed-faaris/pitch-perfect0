@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { cn } from "~/lib/utils";
+import { useLanguage } from "~/lib/language-context";
 
 const copy = {
   en: {
@@ -67,7 +68,7 @@ const highlights = [
 ];
 
 export default function HomePage() {
-  const [language, setLanguage] = useState<"en" | "ta">("en");
+  const { language } = useLanguage();
   const [instructionIndex, setInstructionIndex] = useState(0);
 
   const strings = useMemo(() => copy[language], [language]);
@@ -82,33 +83,15 @@ export default function HomePage() {
   return (
     <div className="space-y-8 pb-6">
       <header className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs uppercase tracking-widest text-muted-foreground">
-              Pitch Perfect
-            </p>
-            <h1 className="text-2xl font-semibold">{strings.headline}</h1>
-          </div>
-          <div className="flex items-center gap-2 rounded-full bg-secondary px-1 py-1 text-xs">
-            {["en", "ta"].map((code) => (
-              <button
-                key={code}
-                onClick={() => setLanguage(code as "en" | "ta")}
-                className={cn(
-                  "rounded-full px-3 py-1 transition-colors",
-                  language === code
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground",
-                )}
-              >
-                {code.toUpperCase()}
-              </button>
-            ))}
-          </div>
+        <div>
+          <p className="text-xs uppercase tracking-widest text-muted-foreground">
+            Pitch Perfect
+          </p>
+          <h1 className="text-2xl font-semibold">{strings.headline}</h1>
         </div>
         <motion.section
           layout
-          className="relative overflow-hidden rounded-3xl border border-border/40 bg-gradient-to-br from-primary/10 via-background to-secondary p-6"
+          className="relative overflow-hidden rounded-3xl border border-border/40 bg-linear-to-br from-primary/10 via-background to-secondary p-6"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: "easeOut" }}

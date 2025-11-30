@@ -5,8 +5,9 @@ import { Geist } from "next/font/google";
 
 import { TRPCReactProvider } from "~/trpc/react";
 import { ThemeProvider } from "~/components/theme-provider";
-import { ThemeToggle } from "~/components/theme-toggle";
 import { BookingsProvider } from "~/lib/bookings-context";
+import { LanguageProvider } from "~/lib/language-context";
+import { TopBar } from "~/components/top-bar";
 
 export const metadata: Metadata = {
   title: "Pitch Perfect Turf",
@@ -31,16 +32,16 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <BookingsProvider>
-            <TRPCReactProvider>
-              <div className="mx-auto flex min-h-screen w-full max-w-md flex-col bg-background">
-                <div className="flex items-center justify-end px-4 pt-4">
-                  <ThemeToggle />
+          <LanguageProvider>
+            <BookingsProvider>
+              <TRPCReactProvider>
+                <div className="mx-auto flex min-h-screen w-full max-w-md flex-col bg-background">
+                  <TopBar />
+                  <div className="flex-1 overflow-hidden">{children}</div>
                 </div>
-                <div className="flex-1">{children}</div>
-              </div>
-            </TRPCReactProvider>
-          </BookingsProvider>
+              </TRPCReactProvider>
+            </BookingsProvider>
+          </LanguageProvider>
         </ThemeProvider>
       </body>
     </html>

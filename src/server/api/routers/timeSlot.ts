@@ -66,4 +66,34 @@ export const timeSlotRouter = createTRPCRouter({
             return result;
         }),
 
+    // 3. Get slots by date (alias for getAllByDate)
+    getByDate: publicProcedure
+        .input(
+            z.object({
+                date: z.string(), // YYYY-MM-DD format
+            })
+        )
+        .query(async ({ input }) => {
+            const now = new Date();
+            const today = now.toISOString().split("T")[0]!;
+            const currentTime = now.toTimeString().split(" ")[0]!; // HH:MM:SS format
+
+            let query = db
+                .select()
+                .from(timeSlots)
+                .where(
+                    eq(timeSlots.date, input.date)
+                )
+                .$dynamic();
+
+            // If the requested date is today, only return slots with times >= current time
+            if (input.date === today) {
+                query = query.where(gte(timeSlots.from, currentTime));
+            }
+
+            const result = await query.orderBy(timeSlots.from);
+
+            return result;
+        }),
+
 });

@@ -15,19 +15,43 @@ export const customerRouter = createTRPCRouter({
             z.object({
                 name: z.string().min(1, "Name is required").max(100),
                 number: z.string().min(1, "Phone number is required").max(20),
-                email: z.string().email("Invalid email"),
+                email: z.string().email("Invalid email").optional(),
                 alternateContactName: z.string().min(1).max(100),
                 alternateContactNumber: z.string().min(1).max(20),
                 languagePreference: z.enum(["en", "ta"]).default("en"),
             })
         )
         .mutation(async ({ input }) => {
+            // Check if customer already exists
+            const existing = await db
+                .select()
+                .from(customers)
+                .where(eq(customers.number, input.number));
+
+            if (existing[0]) {
+                // Update existing customer
+                const updated = await db
+                    .update(customers)
+                    .set({
+                        name: input.name,
+                        email: input.email ?? existing[0].email,
+                        alternateContactName: input.alternateContactName,
+                        alternateContactNumber: input.alternateContactNumber,
+                        languagePreference: input.languagePreference,
+                    })
+                    .where(eq(customers.number, input.number))
+                    .returning();
+
+                return updated[0];
+            }
+
+            // Create new customer
             const result = await db
                 .insert(customers)
                 .values({
                     name: input.name,
                     number: input.number,
-                    email: input.email,
+                    email: input.email ?? "",
                     alternateContactName: input.alternateContactName,
                     alternateContactNumber: input.alternateContactNumber,
                     languagePreference: input.languagePreference,
@@ -53,7 +77,7 @@ export const customerRouter = createTRPCRouter({
             return result[0] ?? null;
         }),
 
-   
+
 
     // Update customer
     update: publicProcedure

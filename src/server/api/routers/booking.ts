@@ -6,10 +6,78 @@ import {
 } from "~/server/api/trpc";
 import { db } from "~/server/db";
 import { bookings, timeSlots } from "~/server/db/schema";
-import { eq, and, inArray } from "drizzle-orm";
+import { eq, and, inArray, desc } from "drizzle-orm";
+
+// Generate 4-digit verification code
+function generateVerificationCode(): string {
+    return Math.floor(1000 + Math.random() * 9000).toString();
+}
 
 export const bookingRouter = createTRPCRouter({
-    // Book slots using phone number and time slot IDs
+    // Create a single booking
+    create: publicProcedure
+        .input(
+            z.object({
+                number: z.string().min(1, "Phone number is required"),
+                timeSlotId: z.number(),
+                bookingType: z.enum(["cricket", "football"]),
+                paymentType: z.enum(["full", "advance"]),
+            })
+        )
+        .mutation(async ({ input }) => {
+            // Check if time slot is available
+            const slot = await db
+                .select()
+                .from(timeSlots)
+                .where(
+                    and(
+                        eq(timeSlots.id, input.timeSlotId),
+                        eq(timeSlots.status, "available")
+                    )
+                );
+
+            if (!slot[0]) {
+                throw new Error("Time slot is not available");
+            }
+
+            // Determine amounts based on payment type
+            const totalAmount = 80000; // ₹800 in paise
+            const amountPaid = input.paymentType === "full" ? 80000 : 10000;
+            const status: "advancePaid" | "fullPaid" = input.paymentType === "full" ? "fullPaid" : "advancePaid";
+
+            // Generate verification code
+            const verificationCode = generateVerificationCode();
+
+            // Create booking
+            const result = await db
+                .insert(bookings)
+                .values({
+                    phoneNumber: input.number,
+                    timeSlotId: input.timeSlotId,
+                    totalAmount,
+                    amountPaid,
+                    status,
+                    bookingType: input.bookingType,
+                    verificationCode,
+                })
+                .returning();
+
+            // Update time slot to booked
+            await db
+                .update(timeSlots)
+                .set({ status: "booked" })
+                .where(eq(timeSlots.id, input.timeSlotId));
+
+            // Return booking with slot details
+            return {
+                ...result[0],
+                from: slot[0].from,
+                to: slot[0].to,
+                date: slot[0].date,
+            };
+        }),
+
+    // Book slots using phone number and time slot IDs (legacy)
     book: publicProcedure
         .input(
             z.object({
@@ -49,6 +117,8 @@ export const bookingRouter = createTRPCRouter({
                 totalAmount,
                 amountPaid,
                 status,
+                verificationCode: generateVerificationCode(),
+                bookingType: "cricket" as const,
             }));
 
             const result = await db
@@ -81,6 +151,8 @@ export const bookingRouter = createTRPCRouter({
                     status: bookings.status,
                     amountPaid: bookings.amountPaid,
                     totalAmount: bookings.totalAmount,
+                    verificationCode: bookings.verificationCode,
+                    bookingType: bookings.bookingType,
                     createdAt: bookings.createdAt,
                     updatedAt: bookings.updatedAt,
                     timeSlot: {
@@ -93,7 +165,7 @@ export const bookingRouter = createTRPCRouter({
                 .from(bookings)
                 .leftJoin(timeSlots, eq(bookings.timeSlotId, timeSlots.id))
                 .where(eq(bookings.phoneNumber, input.number))
-                .orderBy(bookings.createdAt);
+                .orderBy(desc(bookings.createdAt));
 
             return result;
         }),

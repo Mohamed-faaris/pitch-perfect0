@@ -20,7 +20,7 @@ no tests
 ---
 
 ## **2. Home Screen**
-
+--Pitch Perfect langueage(en/ta)(dummy), theme toggle( dark/light)
 - Hero banner (image/video)
 - Book Now button → opens booking page
 - Location preview (static map)

@@ -37,8 +37,10 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
+import { ThemeToggle } from "~/components/theme-toggle";
 
 type TabKey = "home" | "book" | "view" | "gallery" | "contact";
+type Language = "en" | "ta";
 
 type Ticket = {
   id: string;
@@ -73,6 +75,11 @@ const NAV_ITEMS: { key: TabKey; label: string; icon: ComponentType<{ className?:
   { key: "book", label: "Book", icon: CalendarDays },
   { key: "gallery", label: "Gallery", icon: Images },
   { key: "contact", label: "Contact", icon: PhoneCall },
+];
+
+const LANGUAGE_OPTIONS: { id: Language; label: string }[] = [
+  { id: "en", label: "EN" },
+  { id: "ta", label: "TA" },
 ];
 
 const INSTRUCTIONS = [
@@ -161,6 +168,7 @@ const formatSlotLabel = (from: string, to: string) => {
 };
 
 export default function HomePage() {
+  const [language, setLanguage] = useState<Language>("en");
   const [activeTab, setActiveTab] = useState<TabKey>("home");
   const dateOptions = useMemo(() => buildDateRange(), []);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -916,8 +924,36 @@ export default function HomePage() {
   };
 
   return (
-    <main className="min-h-screen bg-linear-to-b from-background to-muted pb-28">
-      <div className="mx-auto max-w-md space-y-6 px-4 py-6">
+    <div className="min-h-screen bg-linear-to-b from-background to-muted pb-28">
+      <header className="sticky top-0 z-40 border-b border-border/70 bg-card/80 backdrop-blur">
+        <div className="mx-auto flex max-w-md items-center gap-3 px-4 py-3">
+          <div className="flex-1">
+            <p className="text-[11px] uppercase tracking-[0.4em] text-muted-foreground">Pitch Perfect</p>
+            <p className="text-lg font-semibold">Turf Booking</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="flex rounded-full bg-muted/70 p-1 text-xs font-semibold shadow-inner">
+              {LANGUAGE_OPTIONS.map((option) => (
+                <button
+                  key={option.id}
+                  onClick={() => setLanguage(option.id)}
+                  className={cn(
+                    "rounded-full px-3 py-1 transition",
+                    language === option.id
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground"
+                  )}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+            <ThemeToggle />
+          </div>
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-md space-y-6 px-4 py-6">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}
@@ -930,7 +966,7 @@ export default function HomePage() {
             {tabContent[activeTab]}
           </motion.div>
         </AnimatePresence>
-      </div>
+      </main>
 
       <nav className="fixed inset-x-0 bottom-3 z-50 mx-auto w-full max-w-md px-4">
         <div className="flex items-center justify-between rounded-3xl border bg-card/95 p-2 shadow-lg backdrop-blur">
@@ -960,7 +996,7 @@ export default function HomePage() {
         onDownloadImage={downloadTicketAsImage}
         onDownloadPdf={downloadTicketAsPdf}
       />
-    </main>
+    </div>
   );
 }
 

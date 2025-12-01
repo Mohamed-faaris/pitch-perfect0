@@ -88,21 +88,15 @@ export default function HomePage() {
   return (
     <div className="space-y-8 pb-6">
       <header className="space-y-4">
-        <div>
-          <p className="text-xs uppercase tracking-widest text-muted-foreground">
-            Pitch Perfect
-          </p>
-          <h1 className="text-2xl font-semibold">{strings.headline}</h1>
-        </div>
         <motion.section
           layout
-          className="relative overflow-hidden rounded-3xl border border-border/40 bg-linear-to-br from-primary/10 via-background to-secondary p-6"
+          className="border-border/40 from-primary/10 via-background to-secondary relative overflow-hidden rounded-3xl border bg-linear-to-br p-6"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: "easeOut" }}
         >
           <motion.div
-            className="absolute -right-12 -top-10 h-40 w-40 rounded-full bg-primary/20 blur-3xl"
+            className="bg-primary/20 absolute -top-10 -right-12 h-40 w-40 rounded-full blur-3xl"
             animate={{
               scale: [1, 1.1, 1],
               opacity: [0.6, 0.9, 0.6],
@@ -110,12 +104,12 @@ export default function HomePage() {
             transition={{ duration: 6, repeat: Infinity }}
           />
           <motion.div
-            className="absolute -bottom-16 right-0 h-48 w-48 rounded-full bg-primary/30 blur-[110px]"
+            className="bg-primary/30 absolute right-0 -bottom-16 h-48 w-48 rounded-full blur-[110px]"
             animate={{ scale: [1, 0.92, 1], opacity: [0.6, 0.8, 0.6] }}
             transition={{ duration: 7, repeat: Infinity }}
           />
           <div className="relative z-10 space-y-3">
-            <p className="text-sm text-muted-foreground">{strings.sub}</p>
+            <p className="text-muted-foreground text-sm">{strings.sub}</p>
             <Button asChild size="lg" className="rounded-full px-6">
               <Link href="/book">{strings.cta}</Link>
             </Button>
@@ -132,12 +126,14 @@ export default function HomePage() {
         </motion.section>
       </header>
 
-      <section className="space-y-3">
+      {/* <section className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">{strings.instructionsTitle}</h2>
-          <span className="text-xs text-muted-foreground">Auto-scroll tips</span>
+          <span className="text-muted-foreground text-xs">
+            Auto-scroll tips
+          </span>
         </div>
-        <Card className="overflow-hidden border border-border/50 p-0">
+        <Card className="border-border/50 overflow-hidden border p-0">
           <div className="relative h-32">
             <AnimatePresence mode="wait">
               <motion.div
@@ -151,7 +147,7 @@ export default function HomePage() {
                 <h3 className="text-base font-medium">
                   {bookingInstructions[instructionIndex]?.title}
                 </h3>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   {bookingInstructions[instructionIndex]?.detail}
                 </p>
               </motion.div>
@@ -171,20 +167,26 @@ export default function HomePage() {
             ))}
           </div>
         </Card>
-        <Link href="/instructions" className="block" aria-label={strings.instructionsCardTitle}>
-          <Card className="group flex items-center justify-between border border-dashed border-border/70 p-4 transition-all hover:border-primary">
+        <Link
+          href="/instructions"
+          className="block"
+          aria-label={strings.instructionsCardTitle}
+        >
+          <Card className="group border-border/70 hover:border-primary flex items-center justify-between border border-dashed p-4 transition-all">
             <div>
-              <h3 className="text-base font-medium">{strings.instructionsCardTitle}</h3>
-              <p className="text-sm text-muted-foreground">
+              <h3 className="text-base font-medium">
+                {strings.instructionsCardTitle}
+              </h3>
+              <p className="text-muted-foreground text-sm">
                 {strings.instructionsCardSubtitle}
               </p>
             </div>
-            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-muted text-muted-foreground transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+            <span className="bg-muted text-muted-foreground group-hover:bg-primary group-hover:text-primary-foreground flex h-10 w-10 items-center justify-center rounded-full transition-colors">
               <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </span>
           </Card>
         </Link>
-      </section>
+      </section> */}
 
       <section className="space-y-3">
         <h2 className="text-lg font-semibold">{strings.locationTitle}</h2>
@@ -198,9 +200,13 @@ export default function HomePage() {
               allowFullScreen
             />
           </div>
-          <div className="p-4 text-sm text-muted-foreground">
-            <p>12/4A, Pitch Perfect Turf, Aruppukottai Main Road, Tamil Nadu.</p>
-            <p className="mt-2 font-medium text-foreground">Open 5 AM – 11 PM</p>
+          <div className="text-muted-foreground p-4 text-sm">
+            <p>
+              12/4A, Pitch Perfect Turf, Aruppukottai Main Road, Tamil Nadu.
+            </p>
+            <p className="text-foreground mt-2 font-medium">
+              Open 5 AM – 11 PM
+            </p>
           </div>
         </Card>
       </section>
@@ -218,7 +224,7 @@ export default function HomePage() {
                   className="object-cover"
                 />
               </div>
-              <p className="px-3 py-2 text-xs text-muted-foreground">
+              <p className="text-muted-foreground px-3 py-2 text-xs">
                 {item.label}
               </p>
             </Card>

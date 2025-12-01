@@ -25,8 +25,7 @@ export function AdminLoginForm() {
         email,
         password,
       });
-
-      router.replace("/admin/bookings");
+      router.replace("/admin/dashboard");
       router.refresh();
     } catch (err) {
       setError(
@@ -41,11 +40,11 @@ export function AdminLoginForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-2 text-center">
-        <p className="text-xs uppercase tracking-widest text-muted-foreground">
+        <p className="text-muted-foreground text-xs tracking-widest uppercase">
           Admin Console
         </p>
         <h1 className="text-2xl font-semibold">Sign in to continue</h1>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-muted-foreground text-sm">
           Use your staff email and password managed by Pitch Perfect.
         </p>
       </div>
@@ -79,7 +78,7 @@ export function AdminLoginForm() {
       </div>
 
       {error && (
-        <p className="rounded-2xl border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+        <p className="border-destructive/40 bg-destructive/10 text-destructive rounded-2xl border px-3 py-2 text-sm">
           {error}
         </p>
       )}

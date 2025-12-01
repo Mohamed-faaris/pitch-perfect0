@@ -7,7 +7,7 @@ import { auth } from "~/server/better-auth";
 import { db } from "~/server/db";
 import { managers, user } from "~/server/db/schema";
 
-const SUPER_ADMIN_EMAIL = "faaris@dev.com";
+const SUPER_ADMIN_EMAIL = "Faaris@dev.com";
 const SUPER_ADMIN_NAME = "Faaris";
 const SUPER_ADMIN_PASSWORD = process.env.SUPER_ADMIN_PASSWORD ?? "Faaris@dev.com";
 

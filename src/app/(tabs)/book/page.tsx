@@ -630,7 +630,7 @@ export default function BookingPage() {
 
       <section className="space-y-3">
         <h2 className="text-muted-foreground text-sm font-medium tracking-wide uppercase">
-          Ask
+          Sport
         </h2>
         <div className="grid grid-cols-2 gap-2">
           {["cricket", "football"].map((option) => {

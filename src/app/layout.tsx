@@ -1,6 +1,6 @@
 import "~/styles/globals.css";
 
-import { type Metadata } from "next";
+import { type Metadata, type Viewport } from "next";
 import { Geist } from "next/font/google";
 
 import { TRPCReactProvider } from "~/trpc/react";
@@ -15,11 +15,18 @@ export const metadata: Metadata = {
   description: "Mobile-first turf booking experience",
   icons: [{ rel: "icon", url: "/favicon.ico" }],
   manifest: "/manifest.webmanifest",
-  themeColor: "#25ff00",
   appleWebApp: {
     title: "Pitch Perfect",
     statusBarStyle: "black-translucent",
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#25ff00",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 const geist = Geist({

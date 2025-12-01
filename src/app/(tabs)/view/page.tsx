@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState, useEffect } from "react";
 import { addDays, format, parseISO } from "date-fns";
 import { motion, AnimatePresence } from "motion/react";
 import { toPng } from "html-to-image";
@@ -146,7 +146,16 @@ export default function ViewPage() {
   const [rescheduleTarget, setRescheduleTarget] = useState<StoredBooking | null>(
     null,
   );
+  const [background, setBackground] = useState<string>("#ffffff");
   const ticketRef = useRef<HTMLDivElement | null>(null);
+
+  // Initialize background color on client-side only
+  useEffect(() => {
+    const bgColor = getComputedStyle(document.documentElement)
+      .getPropertyValue("--background")
+      .trim() || "#ffffff";
+    setBackground(bgColor);
+  }, []);
 
   const sorted = useMemo(() => {
     const upcoming: StoredBooking[] = [];
@@ -169,14 +178,6 @@ export default function ViewPage() {
 
     return { upcoming, past };
   }, [bookings, getStatus]);
-
-  const background = useMemo(
-    () =>
-      getComputedStyle(document.documentElement)
-        .getPropertyValue("--background")
-        .trim() || "#ffffff",
-    [],
-  );
 
   const handleTicketDownload = useCallback(async () => {
     if (!activeTicket || !ticketRef.current) return;

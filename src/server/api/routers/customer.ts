@@ -78,7 +78,7 @@ export const customerRouter = createTRPCRouter({
                     .values({
                         name: input.name,
                         number: input.number,
-                        email: input.email || "no-email@placeholder.com",
+                        email: input.email,
                         alternateContactName: input.alternateContactName,
                         alternateContactNumber: input.alternateContactNumber,
                         languagePreference: input.languagePreference,

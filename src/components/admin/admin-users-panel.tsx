@@ -7,22 +7,29 @@ import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
-import { Input } from "~/components/ui/input";
+// Input removed as we use a native select for enum editing
 
-type TagState = Record<number, string[]>;
-type TagDraftState = Record<number, string>;
+type TagDraftState = Record<number, string | null>;
+type EditingState = Record<number, boolean>;
 
 export function AdminUsersPanel() {
   const { data, isLoading, error } = api.admin.customersList.useQuery();
-  const [tags, setTags] = useState<TagState>({});
+  const ctx = api.useContext();
+  const updateTagMutation = api.admin.updateCustomerTag.useMutation({
+    onSuccess: async () => {
+      await ctx.admin.customersList.invalidate();
+    },
+  });
+
   const [drafts, setDrafts] = useState<TagDraftState>({});
+  const [editing, setEditing] = useState<EditingState>({});
 
   useEffect(() => {
     if (!data) return;
-    setTags((current) => {
-      const next = { ...current } satisfies TagState;
+    setDrafts((current) => {
+      const next = { ...current } satisfies TagDraftState;
       for (const member of data) {
-        next[member.id] ??= [];
+        next[member.id] ??= member.tag ?? null;
       }
       return next;
     });
@@ -32,46 +39,48 @@ export function AdminUsersPanel() {
     if (!data) return [];
     return data.map((member) => ({
       ...member,
-      tags: tags[member.id] ?? [],
+      tag: member.tag ?? null,
     }));
-  }, [data, tags]);
+  }, [data]);
 
-  const handleAddTag = (id: number) => {
-    const value = drafts[id]?.trim();
-    if (!value) return;
-    setTags((current) => {
-      const existing = current[id] ?? [];
-      if (existing.includes(value)) {
-        return current;
-      }
-      return {
-        ...current,
-        [id]: [...existing, value],
-      };
-    });
-    setDrafts((current) => ({
-      ...current,
-      [id]: "",
+  const handleStartEditing = (id: number) => {
+    setEditing((cur) => ({ ...cur, [id]: true }));
+    // initialize draft from existing data
+    setDrafts((cur) => ({
+      ...cur,
+      [id]: cur[id] ?? enrichedMembers.find((m) => m.id === id)?.tag ?? null,
     }));
   };
 
-  const handleRemoveTag = (id: number, tag: string) => {
-    setTags((current) => ({
-      ...current,
-      [id]: (current[id] ?? []).filter((value) => value !== tag),
+  const handleCancelEditing = (id: number) => {
+    setEditing((cur) => ({ ...cur, [id]: false }));
+    // reset draft
+    setDrafts((cur) => ({
+      ...cur,
+      [id]: enrichedMembers.find((m) => m.id === id)?.tag ?? null,
     }));
+  };
+
+  const handleSaveTag = async (id: number) => {
+    const value = drafts[id] ?? null;
+    const tag =
+      value === "" || value === null
+        ? undefined
+        : (value as unknown as "star" | "regular" | "vip" | "new");
+    await updateTagMutation.mutateAsync({ customerId: id, tag });
+    setEditing((cur) => ({ ...cur, [id]: false }));
   };
 
   const handleDownloadCsv = () => {
     if (!enrichedMembers.length) return;
-    const header = ["Name", "Phone", "Email", "Language", "Created At", "Tags"];
+    const header = ["Name", "Phone", "Email", "Language", "Created At", "Tag"];
     const rows = enrichedMembers.map((member) => [
       member.name,
       member.number,
       member.email,
       member.languagePreference,
       member.createdAt?.toString() ?? "",
-      member.tags.join("|"),
+      member.tag ?? "",
     ]);
     const csv = [header, ...rows]
       .map((columns) =>
@@ -97,7 +106,9 @@ export function AdminUsersPanel() {
     <div className="space-y-6 pb-20">
       <header className="flex items-center justify-between">
         <div>
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">Customer base</p>
+          <p className="text-muted-foreground text-xs tracking-wide uppercase">
+            Customer base
+          </p>
           <h1 className="text-2xl font-semibold">Customers</h1>
         </div>
         <div className="flex items-center gap-2">
@@ -120,13 +131,16 @@ export function AdminUsersPanel() {
       {isLoading && (
         <div className="space-y-4">
           {Array.from({ length: 3 }).map((_, index) => (
-            <Card key={index} className="animate-pulse rounded-3xl border-border/60 bg-card/60 px-4 py-6" />
+            <Card
+              key={index}
+              className="border-border/60 bg-card/60 animate-pulse rounded-3xl px-4 py-6"
+            />
           ))}
         </div>
       )}
 
       {error && (
-        <p className="rounded-2xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+        <p className="border-destructive/30 bg-destructive/10 text-destructive rounded-2xl border px-3 py-2 text-sm">
           Unable to load customers. Please refresh.
         </p>
       )}
@@ -134,67 +148,95 @@ export function AdminUsersPanel() {
       {!isLoading && !error && (
         <div className="space-y-4">
           {enrichedMembers.map((member) => (
-            <Card key={member.id} className="rounded-3xl border-border/60 bg-card/60 px-4 py-4">
+            <Card
+              key={member.id}
+              className="border-border/60 bg-card/60 rounded-3xl px-4 py-4"
+            >
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-lg font-semibold">{member.name}</p>
-                  <p className="text-sm text-muted-foreground">{member.number}</p>
-                  <p className="text-xs text-muted-foreground">{member.email}</p>
+                  <p className="text-muted-foreground text-sm">
+                    {member.number}
+                  </p>
+                  <p className="text-muted-foreground text-xs">
+                    {member.email}
+                  </p>
                 </div>
                 <Badge variant="secondary" className="rounded-full uppercase">
                   {member.languagePreference || "n/a"}
                 </Badge>
               </div>
 
-              <div className="mt-3 flex flex-wrap gap-2">
-                {member.tags.map((tag) => (
+              <div className="mt-3 flex items-center gap-2">
+                {!editing[member.id] && (
                   <button
-                    key={tag}
                     type="button"
-                    onClick={() => handleRemoveTag(member.id, tag)}
-                    className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary"
+                    onClick={() => handleStartEditing(member.id)}
+                    onTouchStart={() => handleStartEditing(member.id)}
+                    className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${
+                      member.tag === "vip"
+                        ? "bg-violet-600/10 text-violet-600"
+                        : member.tag === "star"
+                          ? "bg-amber-400/10 text-amber-500"
+                          : member.tag === "new"
+                            ? "bg-green-600/10 text-green-600"
+                            : "bg-muted/10 text-muted-foreground"
+                    }`}
                   >
                     <Tag className="h-3 w-3" />
-                    {tag}
+                    {member.tag ?? "n/a"}
                   </button>
-                ))}
-                {member.tags.length === 0 && (
-                  <span className="text-xs text-muted-foreground">No tags yet</span>
+                )}
+                {editing[member.id] && (
+                  <div className="flex items-center gap-2">
+                    <select
+                      aria-label={`Customer tag for ${member.name}`}
+                      value={drafts[member.id] ?? ""}
+                      onChange={(e) =>
+                        setDrafts((current) => ({
+                          ...current,
+                          [member.id]: e.target.value,
+                        }))
+                      }
+                      className="border-input rounded-md border px-2 py-1 text-sm"
+                    >
+                      <option value="">(none)</option>
+                      <option value="star">Star</option>
+                      <option value="regular">Regular</option>
+                      <option value="vip">VIP</option>
+                      <option value="new">New</option>
+                    </select>
+                    <Button
+                      size="sm"
+                      className="rounded-full"
+                      onClick={() => handleSaveTag(member.id)}
+                    >
+                      Save
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="rounded-full"
+                      onClick={() => handleCancelEditing(member.id)}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
                 )}
               </div>
 
-              <div className="mt-3 flex items-center gap-2">
-                <Input
-                  value={drafts[member.id] ?? ""}
-                  onChange={(event) =>
-                    setDrafts((current) => ({
-                      ...current,
-                      [member.id]: event.target.value,
-                    }))
-                  }
-                  placeholder="Add a tag"
-                  className="h-9"
-                />
-                <Button
-                  type="button"
-                  size="sm"
-                  className="rounded-full"
-                  onClick={() => handleAddTag(member.id)}
-                >
-                  Add
-                </Button>
-              </div>
+              {/* No inline freeform tag input when using enum tags */}
             </Card>
           ))}
         </div>
       )}
 
-      <Card className="rounded-3xl border-border/60 bg-card/60 p-4">
+      <Card className="border-border/60 bg-card/60 rounded-3xl p-4">
         <div className="flex items-center gap-3">
-          <Users className="h-10 w-10 rounded-2xl bg-muted p-2" />
+          <Users className="bg-muted h-10 w-10 rounded-2xl p-2" />
           <div>
             <p className="text-sm font-semibold">Shift planner</p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-muted-foreground text-xs">
               Assign morning/evening shifts with a single tap.
             </p>
           </div>

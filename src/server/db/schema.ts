@@ -63,6 +63,13 @@ export const timeSlots = createTable(
 /* 3. customers */
 export const languageEnum = pgEnum("language", ["en", "ta"]); // English, Tamil
 
+export const customerTagEnum = pgEnum("customer_tag", [
+  "star",
+  "regular",
+  "vip",
+  "new"
+]);
+
 export const customers = createTable(
   "customer",
   (d) => ({
@@ -74,6 +81,8 @@ export const customers = createTable(
     alternateContactName: d.varchar({ length: 100 }),
     alternateContactNumber: d.varchar({ length: 20 }),
     languagePreference: languageEnum().notNull().default("en"),
+
+    tag: customerTagEnum().notNull().default("new"),
 
     createdAt: d
       .timestamp({ withTimezone: true })

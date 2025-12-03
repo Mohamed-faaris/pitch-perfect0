@@ -125,11 +125,33 @@ export const adminRouter = createTRPCRouter({
                     email: customers.email,
                     number: customers.number,
                     languagePreference: customers.languagePreference,
+                    tag: customers.tag,
                     createdAt: customers.createdAt,
                 })
                 .from(customers)
                 .orderBy(desc(customers.createdAt))
                 .limit(limit);
+        }),
+
+    updateCustomerTag: managerProcedure
+        .input(
+            z.object({
+                customerId: z.number().int(),
+                tag: z.enum(["star", "regular", "vip", "new"]).optional(),
+            }),
+        )
+        .mutation(async ({ input }) => {
+            const [updated] = await db
+                .update(customers)
+                .set({ tag: input.tag ?? null })
+                .where(eq(customers.id, input.customerId))
+                .returning({ id: customers.id, tag: customers.tag });
+
+            if (!updated) {
+                throw new TRPCError({ code: "NOT_FOUND", message: "Customer not found" });
+            }
+
+            return updated;
         }),
 
     configGet: managerProcedure.query(async () => {

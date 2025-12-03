@@ -5,8 +5,16 @@ import { Clock, Loader } from "lucide-react";
 import { Card } from "~/components/ui/card";
 import { api } from "~/trpc/react";
 
+function toAmPm(time: string) {
+  if (!time) return "";
+  const [h, m] = time.split(":").map(Number);
+  const hour = h % 12 || 12;
+  const ampm = h < 12 ? "AM" : "PM";
+  return `${hour}:${m.toString().padStart(2, "0")} ${ampm}`;
+}
+
 function formatSlotTime(from: string, to: string) {
-  return `${from} – ${to}`;
+  return `${toAmPm(from)} – ${toAmPm(to)}`;
 }
 
 function getPaymentLabel(status: string): string {

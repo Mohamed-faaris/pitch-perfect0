@@ -32,7 +32,7 @@ export default async function AdminsPage() {
           admins.map((admin) => (
             <Card
               key={admin.id}
-              className="border-border/60 bg-card/60 flex items-center justify-between rounded-3xl px-4 py-3"
+              className="border-border/60 bg-card/60 flex-row items-center justify-between rounded-3xl px-4 py-4"
             >
               <div>
                 <p className="text-lg font-semibold">{admin.user.name}</p>

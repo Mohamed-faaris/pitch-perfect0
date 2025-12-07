@@ -1,8 +1,17 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
+import {
+  FileText,
+  Image as ImageIcon,
+  Edit,
+  Trash2,
+  Check,
+  X,
+} from "lucide-react";
 
 import { GalleryUploadForm } from "~/components/admin/gallery-upload-form";
 import { Button } from "~/components/ui/button";
@@ -98,22 +107,22 @@ export default function AdminGalleryPage() {
               <table className="w-full">
                 <thead>
                   <tr className="bg-muted/50 border-b">
-                    <th className="px-4 py-3 text-left text-sm font-semibold">
+                    <th className="px-2 py-3 text-left text-sm font-semibold">
                       Preview
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold">
+                    <th className="px-2 py-3 text-left text-sm font-semibold">
                       Title
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold">
+                    <th className="px-2 py-3 text-left text-sm font-semibold">
                       Type
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold">
+                    <th className="px-2 py-3 text-left text-sm font-semibold">
                       Status
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold">
+                    <th className="px-2 py-3 text-left text-sm font-semibold">
                       Order
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold">
+                    <th className="px-2 py-3 text-left text-sm font-semibold">
                       Actions
                     </th>
                   </tr>
@@ -121,7 +130,7 @@ export default function AdminGalleryPage() {
                 <tbody>
                   {galleryItems.map((item) => (
                     <tr key={item.id} className="hover:bg-muted/50 border-b">
-                      <td className="px-4 py-3">
+                      <td className="px-2 py-3">
                         <div className="relative h-12 w-12 overflow-hidden rounded">
                           <Image
                             src={
@@ -146,7 +155,7 @@ export default function AdminGalleryPage() {
                           )}
                         </div>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-2 py-3">
                         <div className="max-w-xs">
                           <p className="truncate font-medium">{item.title}</p>
                           {item.description && (
@@ -156,42 +165,50 @@ export default function AdminGalleryPage() {
                           )}
                         </div>
                       </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={`inline-block rounded-full px-2 py-1 text-xs font-semibold ${
-                            item.mediaType === "image"
-                              ? "bg-blue-100 text-blue-800"
-                              : "bg-purple-100 text-purple-800"
-                          }`}
-                        >
-                          {item.mediaType}
+                      <td className="px-2 py-3">
+                        <span className="flex items-center justify-center">
+                          {item.mediaType === "image" ? (
+                            <ImageIcon className="h-5 w-5 text-blue-600" />
+                          ) : (
+                            <FileText className="h-5 w-5 text-purple-600" />
+                          )}
                         </span>
                       </td>
-                      <td className="px-4 py-3">
-                        <Button
-                          variant={item.isActive ? "default" : "outline"}
-                          size="sm"
-                          onClick={() =>
-                            handleToggleActive([item.id], !item.isActive)
-                          }
-                        >
-                          {item.isActive ? "Active" : "Inactive"}
-                        </Button>
+                      <td className="px-2 py-3">
+                        <span className="flex items-center justify-center">
+                          {item.isActive ? (
+                            <Check className="h-5 w-5 text-green-600" />
+                          ) : (
+                            <X className="h-5 w-5 text-red-600" />
+                          )}
+                        </span>
                       </td>
-                      <td className="text-muted-foreground px-4 py-3 text-sm">
+                      <td className="text-muted-foreground px-2 py-3 text-sm">
                         {item.displayOrder}
                       </td>
-                      <td className="px-4 py-3">
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() =>
-                            setDeleteItem({ id: item.id, title: item.title })
-                          }
-                          disabled={deleteMutation.isPending}
-                        >
-                          Delete
-                        </Button>
+                      <td className="px-2 py-3">
+                        <div className="flex gap-2">
+                          <Link href={`/admin/gallery/${item.id}/edit`}>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          </Link>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            onClick={() =>
+                              setDeleteItem({ id: item.id, title: item.title })
+                            }
+                            disabled={deleteMutation.isPending}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))}

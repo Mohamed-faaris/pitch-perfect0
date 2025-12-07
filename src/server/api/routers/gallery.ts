@@ -65,7 +65,10 @@ export const galleryRouter = createTRPCRouter({
             },
         });
 
-        return items;
+        return items.map((item) => ({
+            ...item,
+            isActive: item.status === "approved",
+        }));
     }),
 
     // Get single gallery item
@@ -78,14 +81,17 @@ export const galleryRouter = createTRPCRouter({
             throw new TRPCError({ code: "NOT_FOUND", message: "Gallery item not found" });
         }
 
-        return item;
+        return {
+            ...item,
+            isActive: item.status === "approved",
+        };
     }),
 
     // Create gallery item
     create: managerProcedure
         .input(
             z.object({
-                title: z.string().min(1).max(200),
+                title: z.string().max(200).optional(),
                 description: z.string().optional(),
                 altText: z.string().max(256).optional(),
                 mediaType: z.enum(["image", "video"]),

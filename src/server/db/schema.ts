@@ -270,7 +270,7 @@ export const galleryStatusEnum = pgEnum("gallery_status", ["approved", "inactive
 export const gallery = createTable("gallery", (d) => ({
   id: d.integer().primaryKey().generatedByDefaultAsIdentity(),
 
-  title: d.varchar({ length: 200 }).notNull(),
+  title: d.varchar({ length: 200 }),
   description: d.text(),
   altText: d.varchar({ length: 256 }),
 

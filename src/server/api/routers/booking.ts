@@ -7,6 +7,7 @@ import {
 import { db } from "~/server/db";
 import { bookings, timeSlots, customers } from "~/server/db/schema";
 import { eq, and, inArray, desc } from "drizzle-orm";
+import { sendBookingConfirmation } from "~/server/email";
 
 export const bookingRouter = createTRPCRouter({
     // Book slots using phone number and time slot IDs
@@ -18,7 +19,7 @@ export const bookingRouter = createTRPCRouter({
                 paymentType: z.enum(["full", "advance"], {
                     required_error: "Payment type is required",
                 }),
-                bookingType: z.enum(["cricket", "football"]).default("cricket"),
+                bookingType: z.enum(["cricket", "football", "cricket&football"]).default("cricket"),
             })
         )
         .mutation(async ({ input }) => {
@@ -103,6 +104,29 @@ export const bookingRouter = createTRPCRouter({
                 .from(bookings)
                 .leftJoin(timeSlots, eq(bookings.timeSlotId, timeSlots.id))
                 .where(inArray(bookings.id, result.map(b => b.id)));
+
+            // Send confirmation email if customer has an email
+            if (customer[0].email) {
+                try {
+                    await sendBookingConfirmation(customer[0].email, {
+                        customerName: customer[0].name,
+                        bookingIds: result.map(b => b.id.toString()),
+                        timeSlots: bookingsWithSlots.map(b => ({
+                            date: b.timeSlot.date ?? "",
+                            from: b.timeSlot.from ?? "",
+                            to: b.timeSlot.to ?? "",
+                        })),
+                        bookingType: input.bookingType,
+                        totalAmount: totalAmount,
+                        amountPaid: amountPaid,
+                        paymentStatus: input.paymentType === "full" ? "Full Payment" : "Advance Payment",
+                        verificationCode: verificationCode,
+                    });
+                } catch (emailError) {
+                    // Log email error but don't fail the booking
+                    console.error("Failed to send booking confirmation email:", emailError);
+                }
+            }
 
             return bookingsWithSlots;
         }),

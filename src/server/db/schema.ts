@@ -103,7 +103,7 @@ export const bookingStatusEnum = pgEnum("booking_status", [
   "paymentFailed",
 ]);
 
-export const bookingTypeEnum = pgEnum("booking_type", ["cricket", "football"]);
+export const bookingTypeEnum = pgEnum("booking_type", ["cricket", "football", "cricket&football"]);
 
 export const bookings = createTable("booking", (d) => ({
   id: d.uuid().primaryKey().defaultRandom().notNull(),

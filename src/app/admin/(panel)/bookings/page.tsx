@@ -5,7 +5,7 @@ import { Card } from "~/components/ui/card";
 import { Spinner } from "~/components/spinner";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { format, parseISO, parse, isAfter, isBefore } from "date-fns";
-import { formatSlotRange } from "~/lib/utils";
+import { formatSlotTime } from "~/lib/utils";
 import { Phone, RotateCw } from "lucide-react";
 import {
   Drawer,
@@ -214,7 +214,7 @@ export default function BookingsPage() {
               const bookingCode = `PP-${booking.id.slice(-6).toUpperCase()}`;
               const slotTime =
                 booking.slot?.from && booking.slot?.to
-                  ? formatSlotRange(booking.slot.from, booking.slot.to)
+                  ? `${formatSlotTime(booking.slot.from)} – ${formatSlotTime(booking.slot.to)}`
                   : "N/A";
               const isLastItem = index === bookings.length - 1;
               // Use slot.date if available
@@ -427,10 +427,8 @@ export default function BookingsPage() {
                       )}
                       {activeBooking.slot?.from && activeBooking.slot?.to && (
                         <p className="text-muted-foreground text-sm">
-                          {formatSlotRange(
-                            activeBooking.slot.from,
-                            activeBooking.slot.to,
-                          )}
+                          {formatSlotTime(activeBooking.slot.from)} –{" "}
+                          {formatSlotTime(activeBooking.slot.to)}
                         </p>
                       )}
                       {bookingType && (

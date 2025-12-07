@@ -263,6 +263,44 @@ export const adminRouter = createTRPCRouter({
             return updated;
         }),
 
+    customerDetails: managerProcedure
+        .input(z.object({ customerId: z.number().int() }))
+        .query(async ({ input }) => {
+            const customer = await db.query.customers.findFirst({
+                where: eq(customers.id, input.customerId),
+            });
+
+            if (!customer) {
+                throw new TRPCError({ code: "NOT_FOUND", message: "Customer not found" });
+            }
+
+            // Get booking history for this customer
+            const bookingHistory = await db
+                .select({
+                    id: bookings.id,
+                    status: bookings.status,
+                    amountPaid: bookings.amountPaid,
+                    totalAmount: bookings.totalAmount,
+                    bookingType: bookings.bookingType,
+                    createdAt: bookings.createdAt,
+                    slot: {
+                        from: timeSlots.from,
+                        to: timeSlots.to,
+                        date: timeSlots.date,
+                    },
+                })
+                .from(bookings)
+                .leftJoin(timeSlots, eq(bookings.timeSlotId, timeSlots.id))
+                .where(eq(bookings.phoneNumber, customer.number))
+                .orderBy(desc(bookings.createdAt))
+                .limit(10);
+
+            return {
+                ...customer,
+                bookings: bookingHistory,
+            };
+        }),
+
     configGet: managerProcedure.query(async () => {
         const record = await db.query.configTable.findFirst();
         return record ?? null;

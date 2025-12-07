@@ -1,11 +1,18 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Download, Tag, Users } from "lucide-react";
+import { Download, Tag, Phone, Mail } from "lucide-react";
 
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerCloseButton,
+} from "~/components/ui/drawer";
 import {
   Table,
   TableBody,
@@ -21,6 +28,15 @@ type EditingState = Record<number, boolean>;
 
 export function AdminUsersPanel() {
   const { data, isLoading, error } = api.admin.customersList.useQuery();
+  const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(
+    null,
+  );
+  const { data: customerDetails, isLoading: detailsLoading } =
+    api.admin.customerDetails.useQuery(
+      { customerId: selectedCustomerId ?? 0 },
+      { enabled: selectedCustomerId !== null },
+    );
+
   const ctx = api.useContext();
   const updateTagMutation = api.admin.updateCustomerTag.useMutation({
     onSuccess: async () => {
@@ -155,7 +171,11 @@ export function AdminUsersPanel() {
             <TableBody>
               {enrichedMembers.map((member) => {
                 return (
-                  <TableRow key={member.id}>
+                  <TableRow
+                    key={member.id}
+                    className="hover:bg-accent/50 cursor-pointer transition-colors"
+                    onClick={() => setSelectedCustomerId(member.id)}
+                  >
                     <TableCell>
                       <p className="text-base leading-tight font-semibold">
                         {member.name}
@@ -171,8 +191,14 @@ export function AdminUsersPanel() {
                       {!editing[member.id] && (
                         <button
                           type="button"
-                          onClick={() => handleStartEditing(member.id)}
-                          onTouchStart={() => handleStartEditing(member.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleStartEditing(member.id);
+                          }}
+                          onTouchStart={(e) => {
+                            e.stopPropagation();
+                            handleStartEditing(member.id);
+                          }}
                           className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${
                             member.tag === "vip"
                               ? "bg-violet-600/10 text-violet-600"
@@ -219,6 +245,136 @@ export function AdminUsersPanel() {
           </Table>
         </Card>
       )}
+
+      {/* Customer Details Drawer */}
+      <Drawer
+        open={selectedCustomerId !== null}
+        onOpenChange={(open) => {
+          if (!open) setSelectedCustomerId(null);
+        }}
+      >
+        <DrawerContent className="max-h-[85vh] overflow-auto">
+          <DrawerCloseButton />
+          {detailsLoading ? (
+            <div className="space-y-4 p-6">
+              <div className="bg-muted h-6 animate-pulse rounded" />
+              <div className="bg-muted h-4 w-2/3 animate-pulse rounded" />
+              <div className="space-y-3">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="bg-muted h-4 animate-pulse rounded" />
+                ))}
+              </div>
+            </div>
+          ) : customerDetails ? (
+            <div className="p-6 pb-8">
+              <DrawerHeader className="px-0 pt-0 pb-4">
+                <DrawerTitle className="text-2xl">
+                  {customerDetails.name}
+                </DrawerTitle>
+              </DrawerHeader>
+
+              {/* Customer Info */}
+              <div className="mb-6 space-y-4">
+                <div className="flex items-center gap-3 text-sm">
+                  <Phone className="text-muted-foreground h-4 w-4" />
+                  <span>{customerDetails.number}</span>
+                </div>
+                <div className="flex items-center gap-3 text-sm">
+                  <Mail className="text-muted-foreground h-4 w-4" />
+                  <span>{customerDetails.email ?? "N/A"}</span>
+                </div>
+                {customerDetails.alternateContactName && (
+                  <div className="text-sm">
+                    <p className="text-muted-foreground">Alternate Contact</p>
+                    <p className="font-medium">
+                      {customerDetails.alternateContactName}
+                    </p>
+                    <p className="text-muted-foreground">
+                      {customerDetails.alternateContactNumber}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Tag Section */}
+              <div className="mb-6 border-b pb-6">
+                <p className="text-muted-foreground mb-2 text-xs tracking-wide uppercase">
+                  Tag
+                </p>
+                <div
+                  className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${
+                    customerDetails.tag === "vip"
+                      ? "bg-violet-600/10 text-violet-600"
+                      : customerDetails.tag === "star"
+                        ? "bg-amber-400/10 text-amber-500"
+                        : customerDetails.tag === "new"
+                          ? "bg-green-600/10 text-green-600"
+                          : "bg-muted/10 text-muted-foreground"
+                  }`}
+                >
+                  <Tag className="h-3 w-3" />
+                  {customerDetails.tag ?? "n/a"}
+                </div>
+              </div>
+
+              {/* Booking History */}
+              <div>
+                <p className="text-muted-foreground mb-3 text-xs tracking-wide uppercase">
+                  Recent Bookings
+                </p>
+                {customerDetails.bookings &&
+                customerDetails.bookings.length > 0 ? (
+                  <div className="space-y-2">
+                    {customerDetails.bookings.map((booking) => (
+                      <Card
+                        key={booking.id}
+                        className="bg-muted/30 border-border/50 p-2.5"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex min-w-0 flex-1 items-center gap-2">
+                            <span className="truncate text-xs font-semibold capitalize">
+                              {booking.bookingType}
+                            </span>
+                            <span
+                              className={`rounded px-1.5 py-0.5 text-[10px] font-medium whitespace-nowrap ${
+                                booking.status === "fullPaid"
+                                  ? "bg-green-100 text-green-800"
+                                  : booking.status === "advancePaid"
+                                    ? "bg-blue-100 text-blue-800"
+                                    : "bg-amber-100 text-amber-800"
+                              }`}
+                            >
+                              {booking.status}
+                            </span>
+                          </div>
+                          <div className="text-xs font-medium whitespace-nowrap">
+                            ₹{(booking.amountPaid / 100).toFixed(0)}/₹
+                            {(booking.totalAmount / 100).toFixed(0)}
+                          </div>
+                        </div>
+                        {booking.slot && (
+                          <div className="text-muted-foreground mt-1 truncate text-[11px]">
+                            {booking.slot.date} • {booking.slot.from} -{" "}
+                            {booking.slot.to}
+                          </div>
+                        )}
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground text-xs">
+                    No bookings yet
+                  </p>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="p-6 text-center">
+              <p className="text-muted-foreground">Unable to load details</p>
+            </div>
+          )}
+        </DrawerContent>
+      </Drawer>
     </div>
   );
 }

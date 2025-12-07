@@ -9,7 +9,7 @@ import {
   useState,
 } from "react";
 
-export type BookingType = "cricket" | "football";
+export type BookingType = "cricket" | "football" | "cricket&football";
 export type PaymentOption = "advance" | "full";
 
 export type BookingCustomer = {
@@ -56,7 +56,7 @@ type BookingsContextValue = {
   addBooking: (booking: StoredBooking) => void;
   rescheduleBooking: (
     id: string,
-    payload: Pick<StoredBooking, "date" | "from" | "to" | "slotId">
+    payload: Pick<StoredBooking, "date" | "from" | "to" | "slotId">,
   ) => void;
   clearAll: () => void;
   getStatus: (booking: StoredBooking) => "upcoming" | "past";
@@ -66,17 +66,16 @@ const BookingsContext = createContext<BookingsContextValue | undefined>(
   undefined,
 );
 
-export function BookingsProvider({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export function BookingsProvider({ children }: { children: React.ReactNode }) {
   const [bookings, setBookings] = useState<StoredBooking[]>([]);
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     try {
-      const raw = typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null;
+      const raw =
+        typeof window !== "undefined"
+          ? localStorage.getItem(STORAGE_KEY)
+          : null;
       if (!raw) {
         setHydrated(true);
         return;
@@ -159,7 +158,8 @@ export function createBookingRecord(
   },
 ): StoredBooking {
   const id = partial.id ?? randomId();
-  const bookingCode = partial.bookingCode ?? `PP-${Date.now().toString().slice(-6)}`;
+  const bookingCode =
+    partial.bookingCode ?? `PP-${Date.now().toString().slice(-6)}`;
   return {
     ...partial,
     id,

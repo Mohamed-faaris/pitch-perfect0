@@ -16,7 +16,3 @@ export function formatSlotTime(time: string): string {
   const minutes = minutesStr.padStart(2, "0")
   return `${normalizedHour}:${minutes} ${period}`
 }
-
-export function formatSlotRange(from: string, to: string): string {
-  return `${formatSlotTime(from)} – ${formatSlotTime(to)}`
-}

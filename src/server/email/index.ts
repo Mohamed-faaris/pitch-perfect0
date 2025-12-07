@@ -4,3 +4,4 @@ export { sendWelcomeEmail, sendBookingConfirmation, sendAdminInvitationEmail, se
 export { WelcomeEmail } from "./templates/welcome";
 export { AdminInvitationEmail } from "./templates/admin-invitation";
 export { PasswordResetEmail } from "./templates/password-reset";
+export { BookingConfirmationEmail } from "./templates/booking-confirmation";

@@ -22,7 +22,7 @@ import {
   DrawerFooter,
   DrawerCloseButton,
 } from "~/components/ui/drawer";
-import { cn, formatSlotRange } from "~/lib/utils";
+import { cn, formatSlotTime } from "~/lib/utils";
 import { createBookingRecord, useBookings } from "~/lib/bookings-context";
 import { usePhone } from "~/lib/phone-context";
 import { api } from "~/trpc/react";
@@ -158,7 +158,7 @@ type ConfirmationBooking = {
   date: string;
   from: string;
   to: string;
-  bookingType: "cricket" | "football";
+  bookingType: "cricket" | "football" | "cricket&football";
   paymentOption: "advance" | "full";
   amountPaid: number;
   totalAmount: number;
@@ -177,8 +177,8 @@ export default function BookingPage() {
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [selectedSlots, setSelectedSlots] = useState<SlotView[]>([]);
   const [slotDrawerOpen, setSlotDrawerOpen] = useState(false);
-  const [bookingType, setBookingType] = useState<"" | "cricket" | "football">(
-    "",
+  const [bookingType, setBookingType] = useState<Set<"cricket" | "football">>(
+    new Set(),
   );
   const [paymentOption, setPaymentOption] = useState<"" | "advance" | "full">(
     "",
@@ -217,11 +217,11 @@ export default function BookingPage() {
   useEffect(() => {
     if (existingCustomer) {
       setCustomer({
-        name: existingCustomer.name,
+        name: existingCustomer.name ?? "",
         number: existingCustomer.number,
-        email: existingCustomer.email,
-        alternateContactName: existingCustomer.alternateContactName,
-        alternateContactNumber: existingCustomer.alternateContactNumber,
+        email: existingCustomer.email ?? "",
+        alternateContactName: existingCustomer.alternateContactName ?? "",
+        alternateContactNumber: existingCustomer.alternateContactNumber ?? "",
         language: existingCustomer.languagePreference,
       });
     }
@@ -264,7 +264,7 @@ export default function BookingPage() {
 
   useEffect(() => {
     setSelectedSlots([]);
-    setBookingType("");
+    setBookingType(new Set());
     setPaymentOption("");
   }, [selectedDate]);
 
@@ -292,12 +292,12 @@ export default function BookingPage() {
   const clearSelectedSlots = () => setSelectedSlots([]);
 
   const canChooseGame = selectionCount > 0;
-  const canChoosePayment = canChooseGame && Boolean(bookingType);
+  const canChoosePayment = canChooseGame && bookingType.size > 0;
 
   const formReady = Boolean(
     selectedDate &&
     selectionCount > 0 &&
-    bookingType &&
+    bookingType.size > 0 &&
     paymentOption &&
     customer.name.trim() &&
     customer.number.trim() &&
@@ -321,7 +321,12 @@ export default function BookingPage() {
   };
 
   const handleSubmit = async () => {
-    if (!formReady || !bookingType || !paymentOption || selectionCount === 0) {
+    if (
+      !formReady ||
+      bookingType.size === 0 ||
+      !paymentOption ||
+      selectionCount === 0
+    ) {
       return;
     }
 
@@ -343,11 +348,16 @@ export default function BookingPage() {
 
       // Step 2: Book the slots
       const timeSlotIds = selectedSlots.map((slot) => slot.id);
+      // Convert Set to string: if both selected, "cricket&football", else the single selection
+      const bookingTypeStr =
+        bookingType.size === 2
+          ? "cricket&football"
+          : Array.from(bookingType)[0]!;
       const bookingResult = await bookSlots.mutateAsync({
         number: customer.number,
         timeSlotIds,
         paymentType: paymentOption,
-        bookingType,
+        bookingType: bookingTypeStr,
       });
 
       // Step 3: Create confirmation data
@@ -390,7 +400,7 @@ export default function BookingPage() {
       setConfirmation(confirmationData);
       fireSideCannons();
       setSelectedSlots([]);
-      setBookingType("");
+      setBookingType(new Set());
       setPaymentOption("");
       setSlotDrawerOpen(false);
 
@@ -565,7 +575,7 @@ export default function BookingPage() {
                       transition={springy}
                     >
                       <span className="font-semibold">
-                        {formatSlotRange(slot.from, slot.to)}
+                        {formatSlotTime(slot.from)} – {formatSlotTime(slot.to)}
                       </span>
                       <span className="text-muted-foreground mt-2 inline-flex items-center gap-2 text-xs">
                         {isUnavailable
@@ -620,7 +630,7 @@ export default function BookingPage() {
                     exit={{ opacity: 0, scale: 0.9 }}
                     transition={springy}
                   >
-                    {formatSlotRange(slot.from, slot.to)}
+                    {formatSlotTime(slot.from)} – {formatSlotTime(slot.to)}
                   </motion.span>
                 ))
             )}
@@ -630,11 +640,11 @@ export default function BookingPage() {
 
       <section className="space-y-3">
         <h2 className="text-muted-foreground text-sm font-medium tracking-wide uppercase">
-          Sport
+          Sport {bookingType.size === 2 && "(Cricket & Football)"}
         </h2>
         <div className="grid grid-cols-2 gap-2">
           {["cricket", "football"].map((option) => {
-            const isActive = bookingType === option;
+            const isActive = bookingType.has(option as "cricket" | "football");
             return (
               <MotionButton
                 key={option}
@@ -644,7 +654,15 @@ export default function BookingPage() {
                   "rounded-2xl py-6 text-base capitalize",
                   !isActive && "bg-background",
                 )}
-                onClick={() => setBookingType(option as "cricket" | "football")}
+                onClick={() => {
+                  const newSet = new Set(bookingType);
+                  if (isActive) {
+                    newSet.delete(option as "cricket" | "football");
+                  } else {
+                    newSet.add(option as "cricket" | "football");
+                  }
+                  setBookingType(newSet);
+                }}
                 whileTap={{ scale: canChooseGame ? 0.96 : 1 }}
                 whileHover={{ scale: canChooseGame ? 1.02 : 1 }}
                 transition={springy}
@@ -892,7 +910,10 @@ export default function BookingPage() {
                         key={booking.id}
                         className="flex items-center justify-between text-xs font-semibold"
                       >
-                        <span>{formatSlotRange(booking.from, booking.to)}</span>
+                        <span>
+                          {formatSlotTime(booking.from)} –{" "}
+                          {formatSlotTime(booking.to)}
+                        </span>
                         <span className="text-muted-foreground">
                           #{booking.bookingCode.slice(-4)}
                         </span>
@@ -903,6 +924,14 @@ export default function BookingPage() {
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Player</span>
                   <span>{primaryConfirmation.customer.name}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Sport</span>
+                  <span className="capitalize">
+                    {primaryConfirmation.bookingType === "cricket&football"
+                      ? "Cricket & Football"
+                      : primaryConfirmation.bookingType}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Amount paid</span>

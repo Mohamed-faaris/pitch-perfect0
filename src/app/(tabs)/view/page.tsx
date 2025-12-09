@@ -5,6 +5,7 @@ import { addDays, format, parseISO } from "date-fns";
 import { motion, AnimatePresence } from "motion/react";
 import { toPng } from "html-to-image";
 import { Pencil } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
@@ -281,6 +282,23 @@ export default function ViewPage() {
   const [rescheduleTarget, setRescheduleTarget] =
     useState<DisplayBooking | null>(null);
   const ticketRef = useRef<HTMLDivElement | null>(null);
+
+  const ticketQrValue = useMemo(() => {
+    if (!activeTicket) return "";
+    const name = customer?.name ?? activeTicket.phoneNumber;
+
+    return [
+      `Booking:${activeTicket.bookingCode}`,
+      `Name:${name}`,
+      `Phone:${activeTicket.phoneNumber}`,
+      `Date:${formatDate(activeTicket.date)}`,
+      `Time:${formatSlotRange(activeTicket.from, activeTicket.to)}`,
+      `Type:${activeTicket.bookingType}`,
+      `Payment:${activeTicket.paymentOption}`,
+      `Paid:₹${activeTicket.amountPaid}/${activeTicket.totalAmount}`,
+      `Verification:${activeTicket.verificationCode}`,
+    ].join(" | ");
+  }, [activeTicket, customer]);
 
   // Transform and sort bookings
   const sorted = useMemo(() => {
@@ -581,6 +599,22 @@ export default function ViewPage() {
                   <span className="text-muted-foreground">Booking ID</span>
                   <span className="font-mono text-xs">
                     {activeTicket.bookingCode}
+                  </span>
+                </div>
+                <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed px-4 py-3">
+                  <span className="text-muted-foreground text-xs uppercase tracking-wide">
+                    Scan for booking details
+                  </span>
+                  <QRCodeSVG
+                    value={ticketQrValue}
+                    size={156}
+                    bgColor={background}
+                    fgColor="#111827"
+                    level="M"
+                    includeMargin
+                  />
+                  <span className="text-muted-foreground text-[11px] text-center">
+                    Contains name, phone, slot, amount, payment mode, and verification code.
                   </span>
                 </div>
               </div>

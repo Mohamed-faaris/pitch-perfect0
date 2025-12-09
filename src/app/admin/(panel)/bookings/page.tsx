@@ -61,7 +61,9 @@ export default function BookingsPage() {
   );
   const [isRefetching, setIsRefetching] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState(new Date());
-  const [selectedCalendarDate, setSelectedCalendarDate] = useState<string | null>(null);
+  const [selectedCalendarDate, setSelectedCalendarDate] = useState<
+    string | null
+  >(null);
 
   const now = new Date();
   const currentDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
@@ -81,24 +83,22 @@ export default function BookingsPage() {
     },
     {
       enabled: selectedTab === "current",
-    }
+    },
   );
 
   // Past bookings by date query
-  const {
-    data: pastBookings = [],
-    isLoading: isPastLoading,
-  } = api.admin.getBookingsByDate.useQuery(
-    { date: selectedCalendarDate ?? currentDate },
-    {
-      enabled: selectedTab === "past" && Boolean(selectedCalendarDate),
-    }
-  );
+  const { data: pastBookings = [], isLoading: isPastLoading } =
+    api.admin.getBookingsByDate.useQuery(
+      { date: selectedCalendarDate ?? currentDate },
+      {
+        enabled: selectedTab === "past" && Boolean(selectedCalendarDate),
+      },
+    );
 
   // Auto-refetch current bookings every 2 minutes
   useEffect(() => {
     if (selectedTab !== "current") return;
-    
+
     const interval = setInterval(() => {
       void refetchCurrent();
     }, REFETCH_INTERVAL);
@@ -139,22 +139,34 @@ export default function BookingsPage() {
   const activeBooking: BookingDetail | BookingListItem | null = useMemo(() => {
     if (bookingDetailsQuery.data) return bookingDetailsQuery.data;
     if (!selectedBookingId) return null;
-    
+
     if (selectedTab === "current") {
       return currentBookings.find((b) => b.id === selectedBookingId) ?? null;
     } else {
       return pastBookings.find((b) => b.id === selectedBookingId) ?? null;
     }
-  }, [bookingDetailsQuery.data, currentBookings, pastBookings, selectedBookingId, selectedTab]);
+  }, [
+    bookingDetailsQuery.data,
+    currentBookings,
+    pastBookings,
+    selectedBookingId,
+    selectedTab,
+  ]);
 
   const bookingEmail = (activeBooking as BookingDetail | null)?.email ?? null;
-  const bookingType = (activeBooking as BookingDetail | null)?.bookingType ?? null;
-  const bookingTotalAmount = (activeBooking as BookingDetail | null)?.totalAmount;
-  const bookingAlternateName = (activeBooking as BookingDetail | null)?.alternateContactName ?? null;
-  const bookingAlternateNumber = (activeBooking as BookingDetail | null)?.alternateContactNumber ?? null;
+  const bookingType =
+    (activeBooking as BookingDetail | null)?.bookingType ?? null;
+  const bookingTotalAmount = (activeBooking as BookingDetail | null)
+    ?.totalAmount;
+  const bookingAlternateName =
+    (activeBooking as BookingDetail | null)?.alternateContactName ?? null;
+  const bookingAlternateNumber =
+    (activeBooking as BookingDetail | null)?.alternateContactNumber ?? null;
 
-  const displayBookings = selectedTab === "current" ? currentBookings : pastBookings;
-  const isLoading = selectedTab === "current" ? isCurrentLoading : isPastLoading;
+  const displayBookings =
+    selectedTab === "current" ? currentBookings : pastBookings;
+  const isLoading =
+    selectedTab === "current" ? isCurrentLoading : isPastLoading;
   const error = selectedTab === "current" ? currentError : null;
 
   return (
@@ -194,7 +206,7 @@ export default function BookingsPage() {
           }}
           className={`px-4 py-2 text-sm font-medium transition-colors ${
             selectedTab === "current"
-              ? "text-primary border-b-2 border-primary"
+              ? "text-primary border-primary border-b-2"
               : "text-muted-foreground hover:text-foreground"
           }`}
         >
@@ -208,7 +220,7 @@ export default function BookingsPage() {
           }}
           className={`px-4 py-2 text-sm font-medium transition-colors ${
             selectedTab === "past"
-              ? "text-primary border-b-2 border-primary"
+              ? "text-primary border-primary border-b-2"
               : "text-muted-foreground hover:text-foreground"
           }`}
         >
@@ -335,7 +347,8 @@ export default function BookingsPage() {
                 </div>
               ) : displayBookings.length === 0 ? (
                 <Card className="border-border/60 bg-card/60 text-muted-foreground rounded-3xl p-6 text-center text-sm">
-                  No bookings found for {format(parseISO(selectedCalendarDate), "MMM d, yyyy")}.
+                  No bookings found for{" "}
+                  {format(parseISO(selectedCalendarDate), "MMM d, yyyy")}.
                 </Card>
               ) : (
                 <div className="space-y-3">
@@ -399,13 +412,6 @@ export default function BookingsPage() {
           )}
         </div>
       )}
-            <p className="text-sm font-semibold">Auto reminders</p>
-            <p className="text-muted-foreground text-xs">
-              Players get an SMS reminder 30 minutes before each slot.
-            </p>
-          </div>
-        </div>
-      </Card> */}
 
       {/* Booking Details Drawer */}
       <Drawer
@@ -634,13 +640,13 @@ function CalendarPicker({
 
   const handlePrevMonth = () => {
     onMonthChange(
-      new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1)
+      new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1),
     );
   };
 
   const handleNextMonth = () => {
     onMonthChange(
-      new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1)
+      new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1),
     );
   };
 
@@ -648,10 +654,10 @@ function CalendarPicker({
     const date = new Date(
       calendarMonth.getFullYear(),
       calendarMonth.getMonth(),
-      day
+      day,
     );
     const dateStr = `${date.getFullYear()}-${String(
-      date.getMonth() + 1
+      date.getMonth() + 1,
     ).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
     onDateSelect(dateStr);
   };
@@ -672,6 +678,7 @@ function CalendarPicker({
       <div className="flex items-center justify-between">
         <button
           onClick={handlePrevMonth}
+          aria-label="Previous month"
           className="bg-muted hover:bg-muted/80 flex h-9 w-9 items-center justify-center rounded-lg transition-colors"
         >
           <ChevronLeft className="h-4 w-4" />
@@ -681,6 +688,7 @@ function CalendarPicker({
         </h3>
         <button
           onClick={handleNextMonth}
+          aria-label="Next month"
           className="bg-muted hover:bg-muted/80 flex h-9 w-9 items-center justify-center rounded-lg transition-colors"
         >
           <ChevronRight className="h-4 w-4" />
@@ -692,7 +700,7 @@ function CalendarPicker({
         {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
           <div
             key={day}
-            className="text-muted-foreground text-center text-xs font-medium py-2"
+            className="text-muted-foreground py-2 text-center text-xs font-medium"
           >
             {day}
           </div>

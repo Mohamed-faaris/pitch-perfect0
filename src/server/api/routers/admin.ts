@@ -352,6 +352,88 @@ export const adminRouter = createTRPCRouter({
 
             return updated;
         }),
+
+    getBookingsByDate: managerProcedure
+        .input(
+            z.object({
+                date: z.string(), // YYYY-MM-DD format
+            }),
+        )
+        .query(async ({ input }) => {
+            const results = await db
+                .select({
+                    id: bookings.id,
+                    phoneNumber: bookings.phoneNumber,
+                    name: customers.name,
+                    email: customers.email,
+                    alternateContactName: customers.alternateContactName,
+                    alternateContactNumber: customers.alternateContactNumber,
+                    amountPaid: bookings.amountPaid,
+                    totalAmount: bookings.totalAmount,
+                    status: bookings.status,
+                    verificationCode: bookings.verificationCode,
+                    bookingType: bookings.bookingType,
+                    createdAt: bookings.createdAt,
+                    slot: {
+                        from: timeSlots.from,
+                        to: timeSlots.to,
+                        date: timeSlots.date,
+                    },
+                })
+                .from(bookings)
+                .leftJoin(timeSlots, eq(bookings.timeSlotId, timeSlots.id))
+                .leftJoin(customers, eq(bookings.phoneNumber, customers.number))
+                .where(eq(timeSlots.date, input.date))
+                .orderBy(asc(timeSlots.from));
+
+            if (results.length === 0) {
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: `No bookings found for date ${input.date}`,
+                });
+            }
+
+            return results;
+        }),
+
+    getBookingById: managerProcedure
+        .input(z.object({ bookingId: z.string().uuid() }))
+        .query(async ({ input }) => {
+            const [record] = await db
+                .select({
+                    id: bookings.id,
+                    phoneNumber: bookings.phoneNumber,
+                    name: customers.name,
+                    email: customers.email,
+                    alternateContactName: customers.alternateContactName,
+                    alternateContactNumber: customers.alternateContactNumber,
+                    amountPaid: bookings.amountPaid,
+                    totalAmount: bookings.totalAmount,
+                    status: bookings.status,
+                    verificationCode: bookings.verificationCode,
+                    bookingType: bookings.bookingType,
+                    createdAt: bookings.createdAt,
+                    slot: {
+                        from: timeSlots.from,
+                        to: timeSlots.to,
+                        date: timeSlots.date,
+                    },
+                })
+                .from(bookings)
+                .leftJoin(timeSlots, eq(bookings.timeSlotId, timeSlots.id))
+                .leftJoin(customers, eq(bookings.phoneNumber, customers.number))
+                .where(eq(bookings.id, input.bookingId))
+                .limit(1);
+
+            if (!record) {
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: "Booking not found",
+                });
+            }
+
+            return record;
+        }),
 });
 
 export const superAdminRouter = createTRPCRouter({
@@ -638,6 +720,7 @@ export const superAdminRouter = createTRPCRouter({
             return { success: true };
         }),
 
+
     changeAdminPassword: managerProcedure
         .input(
             z.object({
@@ -808,87 +891,5 @@ export const superAdminRouter = createTRPCRouter({
                 success: true,
                 name: updated[0]!.name,
             };
-        }),
-
-    getBookingsByDate: managerProcedure
-        .input(
-            z.object({
-                date: z.string(), // YYYY-MM-DD format
-            }),
-        )
-        .query(async ({ input }) => {
-            const results = await db
-                .select({
-                    id: bookings.id,
-                    phoneNumber: bookings.phoneNumber,
-                    name: customers.name,
-                    email: customers.email,
-                    alternateContactName: customers.alternateContactName,
-                    alternateContactNumber: customers.alternateContactNumber,
-                    amountPaid: bookings.amountPaid,
-                    totalAmount: bookings.totalAmount,
-                    status: bookings.status,
-                    verificationCode: bookings.verificationCode,
-                    bookingType: bookings.bookingType,
-                    createdAt: bookings.createdAt,
-                    slot: {
-                        from: timeSlots.from,
-                        to: timeSlots.to,
-                        date: timeSlots.date,
-                    },
-                })
-                .from(bookings)
-                .leftJoin(timeSlots, eq(bookings.timeSlotId, timeSlots.id))
-                .leftJoin(customers, eq(bookings.phoneNumber, customers.number))
-                .where(eq(timeSlots.date, input.date))
-                .orderBy(asc(timeSlots.from));
-
-            if (results.length === 0) {
-                throw new TRPCError({
-                    code: "NOT_FOUND",
-                    message: `No bookings found for date ${input.date}`,
-                });
-            }
-
-            return results;
-        }),
-
-    getBookingById: managerProcedure
-        .input(z.object({ bookingId: z.string().uuid() }))
-        .query(async ({ input }) => {
-            const [record] = await db
-                .select({
-                    id: bookings.id,
-                    phoneNumber: bookings.phoneNumber,
-                    name: customers.name,
-                    email: customers.email,
-                    alternateContactName: customers.alternateContactName,
-                    alternateContactNumber: customers.alternateContactNumber,
-                    amountPaid: bookings.amountPaid,
-                    totalAmount: bookings.totalAmount,
-                    status: bookings.status,
-                    verificationCode: bookings.verificationCode,
-                    bookingType: bookings.bookingType,
-                    createdAt: bookings.createdAt,
-                    slot: {
-                        from: timeSlots.from,
-                        to: timeSlots.to,
-                        date: timeSlots.date,
-                    },
-                })
-                .from(bookings)
-                .leftJoin(timeSlots, eq(bookings.timeSlotId, timeSlots.id))
-                .leftJoin(customers, eq(bookings.phoneNumber, customers.number))
-                .where(eq(bookings.id, input.bookingId))
-                .limit(1);
-
-            if (!record) {
-                throw new TRPCError({
-                    code: "NOT_FOUND",
-                    message: "Booking not found",
-                });
-            }
-
-            return record;
         }),
 });

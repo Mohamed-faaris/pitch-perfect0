@@ -95,6 +95,23 @@ export default async function ConfigPage() {
           </div>
         </Card>
       </Link>
+
+      <Link href="/admin/config/banner">
+        <Card className="border-border/60 bg-card/60 rounded-3xl p-4">
+          <div className="flex items-center gap-3">
+            <ImageIcon className="text-primary h-5 w-5" />
+            <div className="flex-1">
+              <p className="text-sm font-semibold">Manage Banner</p>
+              <p className="text-muted-foreground text-xs">
+                Edit banner images and details
+              </p>
+            </div>
+            <Button className="rounded-2xl" variant="secondary" size="sm">
+              Open
+            </Button>
+          </div>
+        </Card>
+      </Link>
     </div>
   );
 }

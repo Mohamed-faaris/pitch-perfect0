@@ -4,6 +4,7 @@ import { timeSlotRouter } from "~/server/api/routers/timeSlot";
 import { bookingRouter } from "~/server/api/routers/booking";
 import { adminRouter, superAdminRouter } from "~/server/api/routers/admin";
 import { galleryRouter } from "~/server/api/routers/gallery";
+import { bannerRouter } from "~/server/api/routers/banner";
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 
 /**
@@ -19,6 +20,7 @@ export const appRouter = createTRPCRouter({
   timeSlot: timeSlotRouter,
   booking: bookingRouter,
   gallery: galleryRouter,
+  banner: bannerRouter,
 });
 
 // export type definition of API

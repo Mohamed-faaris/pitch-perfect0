@@ -68,11 +68,13 @@ export default function HomePage() {
   const strings = useMemo(() => copy[language], [language]);
   const slides = useMemo(() => {
     return (
-      bannerItems?.filter((item) => item.mediaType === "image").map((item) => ({
-        id: String(item.id),
-        src: item.cloudinaryUrl,
-        alt: item.altText || item.title || "Banner",
-      })) ?? []
+      bannerItems
+        ?.filter((item) => item.mediaType === "image")
+        .map((item) => ({
+          id: String(item.id),
+          src: item.cloudinaryUrl,
+          alt: item.altText || item.title || "Banner",
+        })) ?? []
     );
   }, [bannerItems]);
   const quickActions = [

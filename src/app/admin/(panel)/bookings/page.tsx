@@ -399,13 +399,6 @@ export default function BookingsPage() {
           )}
         </div>
       )}
-            <p className="text-sm font-semibold">Auto reminders</p>
-            <p className="text-muted-foreground text-xs">
-              Players get an SMS reminder 30 minutes before each slot.
-            </p>
-          </div>
-        </div>
-      </Card> */}
 
       {/* Booking Details Drawer */}
       <Drawer

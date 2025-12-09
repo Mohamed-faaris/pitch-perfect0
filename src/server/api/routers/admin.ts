@@ -843,13 +843,6 @@ export const superAdminRouter = createTRPCRouter({
                 .where(eq(timeSlots.date, input.date))
                 .orderBy(asc(timeSlots.from));
 
-            if (results.length === 0) {
-                throw new TRPCError({
-                    code: "NOT_FOUND",
-                    message: `No bookings found for date ${input.date}`,
-                });
-            }
-
             return results;
         }),
 

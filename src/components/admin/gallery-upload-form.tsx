@@ -128,9 +128,7 @@ export function GalleryUploadForm({ onUploadSuccess }: GalleryUploadProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 rounded-lg border p-6">
-      <h2 className="text-xl font-semibold">Upload to Gallery</h2>
-
+    <form onSubmit={handleSubmit} className="space-y-4">
       {error && (
         <div className="rounded-md bg-red-50 p-3 text-sm text-red-800">
           {error}

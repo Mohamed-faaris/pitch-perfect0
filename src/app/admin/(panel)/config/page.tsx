@@ -1,4 +1,5 @@
-import { Settings2 } from "lucide-react";
+import { Settings2, Image as ImageIcon } from "lucide-react";
+import Link from "next/link";
 
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
@@ -29,9 +30,9 @@ export default async function ConfigPage() {
   return (
     <div className="space-y-6 pb-20">
       <header className="flex items-center gap-3">
-        <Settings2 className="h-10 w-10 rounded-2xl bg-muted p-2" />
+        <Settings2 className="bg-muted h-10 w-10 rounded-2xl p-2" />
         <div>
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">
+          <p className="text-muted-foreground text-xs tracking-wide uppercase">
             System config
           </p>
           <h1 className="text-2xl font-semibold">Config</h1>
@@ -42,11 +43,11 @@ export default async function ConfigPage() {
         {toggles.map((toggle) => (
           <Card
             key={toggle.label}
-            className="flex items-center justify-between rounded-3xl border-border/60 bg-card/60 px-4 py-3"
+            className="border-border/60 bg-card/60 flex items-center justify-between rounded-3xl px-4 py-3"
           >
             <div>
               <p className="text-sm font-semibold">{toggle.label}</p>
-              <p className="text-xs text-muted-foreground">{toggle.desc}</p>
+              <p className="text-muted-foreground text-xs">{toggle.desc}</p>
             </div>
             <button
               type="button"
@@ -58,7 +59,7 @@ export default async function ConfigPage() {
             >
               <span
                 className={cn(
-                  "h-6 w-6 rounded-full bg-background shadow transition",
+                  "bg-background h-6 w-6 rounded-full shadow transition",
                   toggle.enabled ? "translate-x-6" : "translate-x-0",
                 )}
               />
@@ -67,15 +68,33 @@ export default async function ConfigPage() {
         ))}
       </div>
 
-      <Card className="rounded-3xl border-border/60 bg-card/60 p-4">
+      <Card className="border-border/60 bg-card/60 rounded-3xl p-4">
         <p className="text-sm font-semibold">Slot templates</p>
-        <p className="text-xs text-muted-foreground">
-          Coming soon: adjust slot duration and daylight overrides directly from mobile.
+        <p className="text-muted-foreground text-xs">
+          Coming soon: adjust slot duration and daylight overrides directly from
+          mobile.
         </p>
         <Button className="mt-4 w-full rounded-2xl" variant="secondary">
           Request change
         </Button>
       </Card>
+
+      <Link href="/admin/config/gallery">
+        <Card className="border-border/60 bg-card/60 rounded-3xl p-4">
+          <div className="flex items-center gap-3">
+            <ImageIcon className="text-primary h-5 w-5" />
+            <div className="flex-1">
+              <p className="text-sm font-semibold">Manage Gallery</p>
+              <p className="text-muted-foreground text-xs">
+                Edit gallery images and details
+              </p>
+            </div>
+            <Button className="rounded-2xl" variant="secondary" size="sm">
+              Open
+            </Button>
+          </div>
+        </Card>
+      </Link>
     </div>
   );
 }

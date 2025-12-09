@@ -11,6 +11,7 @@ import {
   Trash2,
   Check,
   X,
+  Plus,
 } from "lucide-react";
 
 import { GalleryUploadForm } from "~/components/admin/gallery-upload-form";
@@ -80,19 +81,27 @@ export default function AdminGalleryPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Gallery Management</h1>
-        <Button onClick={() => setShowUploadForm(!showUploadForm)}>
-          {showUploadForm ? "Cancel" : "Upload New"}
+        <Button onClick={() => setShowUploadForm(true)} size="sm">
+          <Plus className="h-5 w-5" />
         </Button>
       </div>
 
-      {showUploadForm && (
-        <GalleryUploadForm
-          onUploadSuccess={() => {
-            setShowUploadForm(false);
-            refetch();
-          }}
-        />
-      )}
+      <Dialog open={showUploadForm} onOpenChange={setShowUploadForm}>
+        <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Upload to Gallery</DialogTitle>
+            <DialogDescription>
+              Add new images or videos to the gallery
+            </DialogDescription>
+          </DialogHeader>
+          <GalleryUploadForm
+            onUploadSuccess={() => {
+              setShowUploadForm(false);
+              refetch();
+            }}
+          />
+        </DialogContent>
+      </Dialog>
 
       {!galleryItems || galleryItems.length === 0 ? (
         <div className="flex items-center justify-center rounded-lg border border-dashed p-12">

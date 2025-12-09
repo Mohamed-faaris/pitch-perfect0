@@ -123,7 +123,7 @@ export const bannerRouter = createTRPCRouter({
         .input(
             z.object({
                 id: z.number(),
-                title: z.string().min(1).max(200).optional(),
+                title: z.string().max(200).optional(),
                 description: z.string().optional(),
                 altText: z.string().max(256).optional(),
                 displayOrder: z.number().int().min(0).optional(),
@@ -168,7 +168,10 @@ export const bannerRouter = createTRPCRouter({
 
             // Delete from Cloudinary
             try {
-                await CloudinaryService.deleteResource(item.cloudinaryPublicId, item.mediaType === "image" ? "image" : "video");
+                // Map banner mediaType to Cloudinary resource type
+                // gif is treated as image in Cloudinary
+                const cloudinaryType = item.mediaType === "video" ? "video" : "image";
+                await CloudinaryService.deleteResource(item.cloudinaryPublicId, cloudinaryType);
             } catch (error) {
                 console.error("Error deleting from Cloudinary:", error);
                 // Continue with database deletion even if Cloudinary deletion fails

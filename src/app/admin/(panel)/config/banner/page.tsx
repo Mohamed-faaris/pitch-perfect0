@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
-  FileText,
+  Video,
   Image as ImageIcon,
   Edit,
   Trash2,
@@ -152,8 +152,10 @@ export default function AdminBannerPage() {
                         <span className="flex items-center justify-center">
                           {item.mediaType === "image" ? (
                             <ImageIcon className="h-5 w-5 text-blue-600" />
+                          ) : item.mediaType === "video" ? (
+                            <Video className="h-5 w-5 text-purple-600" />
                           ) : (
-                            <FileText className="h-5 w-5 text-purple-600" />
+                            <ImageIcon className="h-5 w-5 text-green-600" />
                           )}
                         </span>
                       </td>

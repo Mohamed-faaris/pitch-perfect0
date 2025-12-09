@@ -85,7 +85,7 @@ const springy = { type: "spring", stiffness: 260, damping: 20 } as const;
 
 const fireSideCannons = () => {
   const colors = ["#a786ff", "#fd8bbc", "#eca184", "#f8deb1"];
-  const end = Date.now() + 2_800;
+  const end = Date.now() + 1_400;
 
   const frame = () => {
     if (Date.now() > end) return;

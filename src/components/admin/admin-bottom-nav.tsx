@@ -41,7 +41,7 @@ const NAV_ITEMS: NavItem[] = [
     roles: "all",
   },
   {
-    label: "Users",
+    label: "Customers",
     href: "/admin/users",
     icon: Users,
     roles: "all",

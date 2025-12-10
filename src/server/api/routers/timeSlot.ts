@@ -15,6 +15,8 @@ export const timeSlotRouter = createTRPCRouter({
         .input(
             z.object({
                 limit: z.number().min(1).max(24 * 31).default(24 * 5),
+                date: z.string().optional().default(() => new Date().toISOString().split("T")[0]!),
+                time: z.string().optional().default(() => new Date().toTimeString().split(" ")[0]!),
             })
         )
         .query(async ({ input }) => {
@@ -26,7 +28,10 @@ export const timeSlotRouter = createTRPCRouter({
                 .where(
                     and(
                         eq(timeSlots.status, "available"),
-                        gte(timeSlots.date, today) // current date and forward
+                        gte(timeSlots.date, today), // current date and forward
+                        input.date === today
+                            ? gte(timeSlots.from, input.time!) // if today, only future times
+                            : undefined
                     )
                 )
                 .orderBy(timeSlots.date, timeSlots.from)

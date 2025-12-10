@@ -29,6 +29,13 @@
       "when": 1765269918178,
       "tag": "0003_purple_flatman",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1765401629864,
+      "tag": "0004_wooden_rictor",
+      "breakpoints": true
     }
   ]
 }

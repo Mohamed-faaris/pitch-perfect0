@@ -6,6 +6,27 @@ import {
   uniqueIndex,
   pgTable,
 } from "drizzle-orm/pg-core";
+
+/* -------------------- TYPES -------------------- */
+
+export interface SlotConfig {
+  from: string;
+  to: string;
+  status: "available" | "booked" | "unavailable" | "bookingInProgress";
+}
+
+export interface AvoidSlot {
+  from: string;
+  to: string;
+  date: string;
+}
+
+export interface SlotsConfigType {
+  AvailableSlots: SlotConfig[];
+  avoidSlots: AvoidSlot[];
+  daysInAdvanceToCreateSlots: number;
+}
+
 /**
  * Multi-project schema creator
  */
@@ -414,12 +435,18 @@ export const configTable = createTable("config", (d) => ({
 
   fullPaymentMode: d.boolean().notNull().default(false),
 
-  slotIntervalMinutes: d.integer().notNull().default(60),
-  numberOfSlotsPerDay: d.integer().notNull().default(24),
+  slots: d.jsonb().notNull().$defaultFn(() => ({
+    AvailableSlots: Array.from({ length: 24 }, (_, i) => ({
+      from: `${String(i).padStart(2, "0")}:00:00`,
+      to: `${String(i + 1).padStart(2, "0")}:00:00`,
+      status: "available" as const,
+    })),
+    avoidSlots:[{}],//structure: {from: "HH:MM:SS", to: "HH:MM:SS",date: "YYYY-MM-DD"} sorted by date
+    daysInAdvanceToCreateSlots: 3// number of days in advance to create slots
+  })),
 
   bookingBufferMinutes: d.integer().notNull().default(3),// minutes before payment deadline to open slot again
 
-  slotsVisibleDaysInAdvance: d.integer().notNull().default(4), // number of days in advance slots are visible to customers
 }));
 
 /* -------------------- AUTH TABLES -------------------- */

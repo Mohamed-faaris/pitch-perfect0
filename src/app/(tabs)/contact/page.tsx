@@ -12,15 +12,15 @@ import { WhatsAppIcon } from "~/components/ui/whatsapp-icon";
 const contacts = [
   {
     name: "Front Desk",
-    phone: "+91 98765 43210",
+    phone: "+91 73588 48765",
   },
   {
     name: "Ground Manager",
-    phone: "+91 91234 56780",
+    phone: "+91 73588 48765",
   },
 ];
 
-const whatsappNumber = "919123456780";
+const whatsappNumber = "+917358848765";
 
 const MotionCard = motion(Card);
 const MotionButton = motion(Button);

@@ -56,32 +56,32 @@ export const timeSlotRouter = createTRPCRouter({
     // 2. Get all slots for a specific date (current and forward times only)
     // Returns slots grouped by date with only future/current times
     getAllByDate: publicProcedure
-    .input(
-        z.object({
-            date: z.string().default(() => new Date().toISOString().split("T")[0]!), // Default to today (YYYY-MM-DD format)
-        })
-    )
-    .query(async ({ input }) => {
-        const now = new Date();
-        const today = now.toISOString().split("T")[0]!;
-        const currentTime = now.toTimeString().split(" ")[0]!; // HH:MM:SS format
+        .input(
+            z.object({
+                date: z.string().default(() => new Date().toISOString().split("T")[0]!), // Default to today (YYYY-MM-DD format)
+            })
+        )
+        .query(async ({ input }) => {
+            const now = new Date();
+            const today = now.toISOString().split("T")[0]!;
+            const currentTime = now.toTimeString().split(" ")[0]!; // HH:MM:SS format
 
-        let query = db
-            .select()
-            .from(timeSlots)
-            .where(
-                eq(timeSlots.date, input.date)
-            )
-            .$dynamic();
+            let query = db
+                .select()
+                .from(timeSlots)
+                .where(
+                    eq(timeSlots.date, input.date)
+                )
+                .$dynamic();
 
-        // If the requested date is today, only return slots with times >= current time
-        if (input.date === today) {
-            query = query.where(gte(timeSlots.from, currentTime));
-        }
+            // If the requested date is today, only return slots with times >= current time
+            if (input.date === today) {
+                query = query.where(gte(timeSlots.from, currentTime));
+            }
 
-        const result = await query.orderBy(timeSlots.from);
+            const result = await query.orderBy(timeSlots.from);
 
-        return result;
-    }),
+            return result;
+        }),
 
 });

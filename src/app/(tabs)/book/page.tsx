@@ -462,7 +462,7 @@ export default function BookingPage() {
         <h2 className="text-muted-foreground text-sm font-medium tracking-wide uppercase">
           Pick a date
         </h2>
-        <div className="-mx-4 flex gap-2 overflow-x-auto px-4">
+        <div className="-mx-4 flex gap-2 overflow-x-auto px-4 ">
           {dates.map((date) => {
             const isActive = selectedDate === date;
             const formatted = format(parseISO(date), "EEE d MMM");
@@ -472,7 +472,7 @@ export default function BookingPage() {
                 key={date}
                 onClick={() => setSelectedDate(date)}
                 className={cn(
-                  "flex min-w-24 flex-col items-center rounded-2xl border px-4 py-3 text-sm transition-all",
+                  "flex min-w-24 flex-col items-center rounded-2xl border px-4 my-0.5 py-3 text-sm transition-all",
                   isActive
                     ? "border-primary bg-primary/10 text-primary"
                     : "border-border text-muted-foreground",

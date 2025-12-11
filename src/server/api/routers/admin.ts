@@ -397,10 +397,8 @@ export const adminRouter = createTRPCRouter({
 
             return record;
         }),
-});
 
-export const superAdminRouter = createTRPCRouter({
-    dashboardSummary: superAdminProcedure.query(async () => {
+    dashboardSummary: managerProcedure.query(async () => {
         const now = new Date();
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
         const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
@@ -538,6 +536,10 @@ export const superAdminRouter = createTRPCRouter({
             })),
         } as const;
     }),
+});
+
+export const superAdminRouter = createTRPCRouter({
+    
 
     adminsList: superAdminProcedure.query(async () => {
         return db

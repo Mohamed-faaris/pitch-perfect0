@@ -42,9 +42,9 @@ function calculatePercentageChange(current: number, previous: number): string {
 }
 
 export default async function DashboardPage() {
-  await requireManager({ superOnly: true });
+ 
 
-  const dashboardData = await api.superAdmin.dashboardSummary();
+  const dashboardData = await api.admin.dashboardSummary();
 
   // Calculate metrics
   const revenueChange = calculatePercentageChange(

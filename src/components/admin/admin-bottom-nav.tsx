@@ -26,7 +26,7 @@ const NAV_ITEMS: NavItem[] = [
     label: "Dashboard",
     href: "/admin/dashboard",
     icon: BarChart3,
-    roles: ["superAdmin"],
+    roles: "all",
   },
   {
     label: "Bookings",
@@ -38,7 +38,7 @@ const NAV_ITEMS: NavItem[] = [
     label: "Coupons",
     href: "/admin/coupons",
     icon: TicketPercent,
-    roles: "all",
+    roles: ["superAdmin"],
   },
   {
     label: "Customers",

@@ -8,6 +8,14 @@ import { toast } from "sonner";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "~/components/ui/dialog";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { SlotManager } from "./slot-manager";
@@ -27,6 +35,8 @@ export default function ConfigPage() {
   const [bufferMinutes, setBufferMinutes] = useState(3);
   const [daysInAdvance, setDaysInAdvance] = useState(3);
   const [savingState, setSavingState] = useState<string | null>(null);
+  const [maintenanceWarningOpen, setMaintenanceWarningOpen] = useState(false);
+  const [pendingMaintenanceValue, setPendingMaintenanceValue] = useState(false);
 
   useEffect(() => {
     if (config) {
@@ -48,6 +58,21 @@ export default function ConfigPage() {
   }, [config]);
 
   const handleToggle = async (
+    field: "maintenanceMode" | "fullPaymentMode",
+    value: boolean,
+  ) => {
+    // Show warning dialog when turning ON maintenance mode
+    if (field === "maintenanceMode" && value === true) {
+      setPendingMaintenanceValue(value);
+      setMaintenanceWarningOpen(true);
+      return;
+    }
+
+    // Proceed with toggle for other cases
+    performToggle(field, value);
+  };
+
+  const performToggle = async (
     field: "maintenanceMode" | "fullPaymentMode",
     value: boolean,
   ) => {
@@ -74,6 +99,11 @@ export default function ConfigPage() {
     } finally {
       setSavingState(null);
     }
+  };
+
+  const handleConfirmMaintenance = () => {
+    setMaintenanceWarningOpen(false);
+    performToggle("maintenanceMode", pendingMaintenanceValue);
   };
 
   const handleMaintenanceMessageSave = async () => {
@@ -332,6 +362,44 @@ export default function ConfigPage() {
           </Card>
         </Link>
       </div>
+
+      {/* Maintenance Mode Warning Dialog */}
+      <Dialog
+        open={maintenanceWarningOpen}
+        onOpenChange={setMaintenanceWarningOpen}
+      >
+        <DialogContent className="rounded-3xl">
+          <DialogHeader>
+            <DialogTitle>Enable Maintenance Mode?</DialogTitle>
+            <DialogDescription>
+              Enabling maintenance mode will pause all new bookings. Users will
+              see a maintenance message when trying to book.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 py-4">
+            {maintenanceMessage && (
+              <>
+                <p className="text-sm font-semibold">Users will see:</p>
+                <p className="bg-muted rounded-lg p-3 text-sm">
+                  {maintenanceMessage}
+                </p>
+              </>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setMaintenanceWarningOpen(false)}
+              className="rounded-2xl"
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleConfirmMaintenance} className="rounded-2xl">
+              Enable Maintenance Mode
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

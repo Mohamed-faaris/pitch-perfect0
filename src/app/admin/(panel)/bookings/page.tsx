@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useLanguage } from "~/lib/language-context";
+import allTranslations from "~/lib/translations/all";
 import { Card } from "~/components/ui/card";
 import { Spinner } from "~/components/spinner";
 import { api, type RouterOutputs } from "~/trpc/react";
@@ -60,6 +62,8 @@ function getDotColor(booking: {
 const REFETCH_INTERVAL = 2 * 60 * 1000; // 2 minutes
 
 export default function BookingsPage() {
+  const { language } = useLanguage();
+  const strings = useMemo(() => allTranslations.admin[language], [language]);
   const [selectedTab, setSelectedTab] = useState<"current" | "past">("current");
   const [selectedBookingId, setSelectedBookingId] = useState<string | null>(
     null,
@@ -179,9 +183,9 @@ export default function BookingsPage() {
       <header className="flex items-start justify-between gap-4">
         <div>
           <p className="text-muted-foreground text-xs tracking-wide uppercase">
-            View bookings
+            {strings.bookingsTitle}
           </p>
-          <h1 className="text-2xl font-semibold">Bookings Timeline</h1>
+          <h1 className="text-2xl font-semibold">{strings.bookingsTitle}</h1>
           <p className="text-muted-foreground text-sm">
             Share verification codes with players as they arrive.
           </p>

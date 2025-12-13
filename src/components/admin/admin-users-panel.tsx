@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Download, Tag, Phone, Mail } from "lucide-react";
 
 import { api } from "~/trpc/react";
+import { useLanguage } from "~/lib/language-context";
+import allTranslations from "~/lib/translations/all";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import {
@@ -27,6 +29,8 @@ type TagDraftState = Record<number, string | null>;
 type EditingState = Record<number, boolean>;
 
 export function AdminUsersPanel() {
+  const { language } = useLanguage();
+  const strings = useMemo(() => allTranslations.admin[language], [language]);
   const { data, isLoading, error } = api.admin.customersList.useQuery();
   const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(
     null,
@@ -120,9 +124,9 @@ export function AdminUsersPanel() {
       <header className="flex items-center justify-between">
         <div>
           <p className="text-muted-foreground text-xs tracking-wide uppercase">
-            Customer base
+            {strings.usersTitle}
           </p>
-          <h1 className="text-2xl font-semibold">Customers</h1>
+          <h1 className="text-2xl font-semibold">{strings.usersTitle}</h1>
         </div>
         <div className="flex items-center gap-2">
           <Button

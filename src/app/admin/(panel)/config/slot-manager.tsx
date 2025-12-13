@@ -1,6 +1,5 @@
 "use client";
-
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { Clock, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 
@@ -15,6 +14,8 @@ import {
 } from "~/components/ui/drawer";
 import { api } from "~/trpc/react";
 import { formatSlotRange } from "~/lib/utils";
+import { useLanguage } from "~/lib/language-context";
+import allTranslations from "~/lib/translations/all";
 
 interface Slot {
   from: string;
@@ -29,6 +30,8 @@ interface SlotsConfig {
 }
 
 export function SlotManager() {
+  const { language } = useLanguage();
+  const strings = useMemo(() => allTranslations.admin[language], [language]);
   const [isOpen, setIsOpen] = useState(false);
   const [slotsConfig, setSlotsConfig] = useState<SlotsConfig | null>(null);
   const [loading, setLoading] = useState(false);
@@ -84,7 +87,7 @@ export function SlotManager() {
         <div className="flex items-center gap-3">
           <Clock className="text-primary h-5 w-5" />
           <div className="flex-1">
-            <p className="text-sm font-semibold">Manage Slots</p>
+            <p className="text-sm font-semibold">{strings.slotManagerTitle}</p>
             <p className="text-muted-foreground text-xs">
               Toggle time slots on and off
             </p>
@@ -103,7 +106,7 @@ export function SlotManager() {
       <Drawer open={isOpen} onOpenChange={setIsOpen}>
         <DrawerContent>
           <DrawerHeader>
-            <DrawerTitle>Manage Time Slots</DrawerTitle>
+            <DrawerTitle>{strings.slotManagerTitle}</DrawerTitle>
           </DrawerHeader>
 
           <div className="max-h-[60vh] overflow-y-auto px-4 pb-4">

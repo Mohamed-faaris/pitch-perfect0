@@ -1,18 +1,23 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 
 import { authClient } from "~/server/better-auth/client";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { useLanguage } from "~/lib/language-context";
+import allTranslations from "~/lib/translations/all";
 
 export function ResetPasswordForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
+
+  const { language } = useLanguage();
+  const strings = useMemo(() => allTranslations.admin[language], [language]);
 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -69,9 +74,11 @@ export function ResetPasswordForm() {
       <div className="space-y-6">
         <div className="space-y-2 text-center">
           <p className="text-muted-foreground text-xs tracking-widest uppercase">
-            Admin Console
+            {strings.panelTitle}
           </p>
-          <h1 className="text-2xl font-semibold">Invalid Reset Link</h1>
+          <h1 className="text-2xl font-semibold">
+            {strings.resetPasswordTitle}
+          </h1>
           <p className="text-muted-foreground text-sm">
             The password reset link is missing or invalid.
           </p>
@@ -97,9 +104,9 @@ export function ResetPasswordForm() {
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-2 text-center">
         <p className="text-muted-foreground text-xs tracking-widest uppercase">
-          Admin Console
+          {strings.panelTitle}
         </p>
-        <h1 className="text-2xl font-semibold">Create New Password</h1>
+        <h1 className="text-2xl font-semibold">{strings.resetPasswordTitle}</h1>
         <p className="text-muted-foreground text-sm">
           Enter your new password below.
         </p>
@@ -156,7 +163,7 @@ export function ResetPasswordForm() {
         className="w-full rounded-2xl py-6 text-base font-semibold"
         disabled={isSubmitting || success}
       >
-        {isSubmitting ? "Resetting..." : "Reset Password"}
+        {isSubmitting ? "Resetting..." : strings.resetPasswordTitle}
       </Button>
 
       <div className="flex items-center justify-center gap-2 text-sm">

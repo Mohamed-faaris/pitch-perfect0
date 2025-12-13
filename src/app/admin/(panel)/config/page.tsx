@@ -2,7 +2,7 @@
 
 import { Settings2, Image as ImageIcon } from "lucide-react";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 
 import { Button } from "~/components/ui/button";
@@ -11,10 +11,15 @@ import { Input } from "~/components/ui/input";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { SlotManager } from "./slot-manager";
+import { useLanguage } from "~/lib/language-context";
+import allTranslations from "~/lib/translations/all";
 
 export default function ConfigPage() {
   const { data: config, isLoading } = api.admin.configGet.useQuery();
   const configUpdateMutation = api.admin.configUpdate.useMutation();
+
+  const { language } = useLanguage();
+  const strings = useMemo(() => allTranslations.admin[language], [language]);
 
   const [maintenanceMode, setMaintenanceMode] = useState(false);
   const [fullPaymentMode, setFullPaymentMode] = useState(false);
@@ -135,9 +140,9 @@ export default function ConfigPage() {
         <Settings2 className="bg-muted h-10 w-10 rounded-2xl p-2" />
         <div>
           <p className="text-muted-foreground text-xs tracking-wide uppercase">
-            System config
+            {strings.configTitle}
           </p>
-          <h1 className="text-2xl font-semibold">Config</h1>
+          <h1 className="text-2xl font-semibold">{strings.configTitle}</h1>
         </div>
       </header>
 
@@ -298,7 +303,7 @@ export default function ConfigPage() {
             <div className="flex items-center gap-3">
               <ImageIcon className="text-primary h-5 w-5" />
               <div className="flex-1">
-                <p className="text-sm font-semibold">Manage Gallery</p>
+                <p className="text-sm font-semibold">{strings.galleryTitle}</p>
                 <p className="text-muted-foreground text-xs">
                   Edit gallery images and details
                 </p>
@@ -315,7 +320,7 @@ export default function ConfigPage() {
             <div className="flex items-center gap-3">
               <ImageIcon className="text-primary h-5 w-5" />
               <div className="flex-1">
-                <p className="text-sm font-semibold">Manage Banner</p>
+                <p className="text-sm font-semibold">{strings.bannerTitle}</p>
                 <p className="text-muted-foreground text-xs">
                   Edit banner images and details
                 </p>

@@ -60,11 +60,13 @@ export default function EditGalleryPage() {
   }, [item]);
 
   const handleDelete = async () => {
-    await toast.promise(deleteMutation.mutateAsync({ id }), {
+    const p = deleteMutation.mutateAsync({ id });
+    void toast.promise(p, {
       loading: "Deleting gallery item...",
       success: "Gallery item deleted",
       error: "Failed to delete gallery item",
     });
+    await p;
 
     setShowDeleteDialog(false);
     router.push("/admin/gallery");
@@ -73,24 +75,23 @@ export default function EditGalleryPage() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      await toast.promise(
-        updateMutation.mutateAsync({
-          id,
-          title: formData.title || undefined,
-          description: formData.description || undefined,
-          altText: formData.altText || undefined,
-          displayOrder: formData.displayOrder,
-          credits: formData.credits || undefined,
-          status: formData.status,
-        }),
-        {
-          loading: "Updating gallery item...",
-          success: "Gallery item updated successfully",
-          error: "Failed to update gallery item",
-        },
-      );
+      const p = updateMutation.mutateAsync({
+        id,
+        title: formData.title || undefined,
+        description: formData.description || undefined,
+        altText: formData.altText || undefined,
+        displayOrder: formData.displayOrder,
+        credits: formData.credits || undefined,
+        status: formData.status,
+      });
+      void toast.promise(p, {
+        loading: "Updating gallery item...",
+        success: "Gallery item updated successfully",
+        error: "Failed to update gallery item",
+      });
+      await p;
       setIsEditing(false);
-      refetch();
+      void refetch();
     } finally {
       setIsSaving(false);
     }
@@ -240,26 +241,27 @@ export default function EditGalleryPage() {
                   className="text-muted-foreground text-sm"
                 >
                   Title
-                </Label>
-                {isEditing ? (
-                  <Input
-                    id="title"
-                    value={formData.title}
-                    onChange={(e) =>
-                      setFormData({ ...formData, title: e.target.value })
-                    }
-                    placeholder="Gallery item title"
-                    className="mt-1"
-                  />
                 ) : (
-                  <p className="mt-1 font-medium">{formData.title}</p>
-                )}
-              </div>
-
-              <div>
-                <Label
-                  htmlFor="description"
-                  className="text-muted-foreground text-sm"
+                  <select
+                    id="status"
+                    aria-label="Status"
+                    value={formData.status}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        status: e.target.value as
+                          | "approved"
+                          | "inactive"
+                          | "discarded",
+                      })
+                    }
+                    className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus:ring-ring mt-1 w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <option value="approved">Active (Approved)</option>
+                    <option value="inactive">Inactive</option>
+                    <option value="discarded">Discarded</option>
+                  </select>
+                ) : (
                 >
                   Description
                 </Label>

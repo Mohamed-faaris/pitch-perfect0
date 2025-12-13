@@ -5,6 +5,7 @@ import { InviteAdminDrawer } from "~/components/admin/invite-admin-drawer";
 import { AdminProfileDrawer } from "~/components/admin/admin-profile-drawer";
 import { requireManager } from "~/server/admin/session";
 import { api } from "~/trpc/server";
+import allTranslations from "~/lib/translations/all";
 
 const roleLabel: Record<string, string> = {
   superAdmin: "Super Admin",
@@ -15,6 +16,7 @@ export default async function AdminsPage() {
   await requireManager({ superOnly: true });
 
   const admins = await api.superAdmin.adminsList();
+  const strings = allTranslations.admin.en;
 
   return (
     <div className="space-y-6 pb-20">
@@ -24,7 +26,7 @@ export default async function AdminsPage() {
           <p className="text-muted-foreground text-xs tracking-wide uppercase">
             Staff access
           </p>
-          <h1 className="text-2xl font-semibold">Manage admins</h1>
+          <h1 className="text-2xl font-semibold">{strings.adminsTitle}</h1>
         </div>
       </header>
 

@@ -2,8 +2,8 @@ import { LineChart, TrendingUp } from "lucide-react";
 
 import { Card } from "~/components/ui/card";
 import { cn } from "~/lib/utils";
-import { requireManager } from "~/server/admin/session";
 import { api } from "~/trpc/server";
+import allTranslations from "~/lib/translations/all";
 
 const widthScale = [
   "w-1/4",
@@ -41,9 +41,9 @@ function calculatePercentageChange(current: number, previous: number): string {
   return `${change >= 0 ? "+" : ""}${change.toFixed(1)}%`;
 }
 
-export default async function DashboardPage() {
- 
+const strings = allTranslations.admin.en;
 
+export default async function DashboardPage() {
   const dashboardData = await api.admin.dashboardSummary();
 
   // Calculate metrics
@@ -185,7 +185,7 @@ export default async function DashboardPage() {
             <p className="text-muted-foreground text-xs tracking-widest uppercase">
               Last 7 days
             </p>
-            <p className="text-lg font-semibold">Revenue trend</p>
+            <p className="text-lg font-semibold">{strings.dashboardTitle}</p>
           </div>
           <TrendingUp className="text-muted-foreground h-5 w-5" />
         </header>

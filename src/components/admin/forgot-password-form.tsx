@@ -1,14 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 
 import { authClient } from "~/server/better-auth/client";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { useLanguage } from "~/lib/language-context";
+import allTranslations from "~/lib/translations/all";
 
 export function ForgotPasswordForm() {
+  const { language } = useLanguage();
+  const strings = useMemo(() => allTranslations.admin[language], [language]);
   const [email, setEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -42,11 +46,14 @@ export function ForgotPasswordForm() {
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-2 text-center">
         <p className="text-muted-foreground text-xs tracking-widest uppercase">
-          Admin Console
+          {strings.panelTitle}
         </p>
-        <h1 className="text-2xl font-semibold">Reset Your Password</h1>
+        <h1 className="text-2xl font-semibold">
+          {strings.forgotPasswordTitle}
+        </h1>
         <p className="text-muted-foreground text-sm">
-          Enter your email address and we&apos;ll send you a link to reset your password.
+          Enter your email address and we&apos;ll send you a link to reset your
+          password.
         </p>
       </div>
 
@@ -74,11 +81,11 @@ export function ForgotPasswordForm() {
       )}
 
       {success && (
-        <div className="border-green-500/40 bg-green-500/10 text-green-700 rounded-2xl border px-3 py-2 text-sm">
+        <div className="rounded-2xl border border-green-500/40 bg-green-500/10 px-3 py-2 text-sm text-green-700">
           <p className="font-semibold">Check your email</p>
           <p>
-            We sent a password reset link to <strong>{email}</strong>. Please check
-            your email and follow the link to reset your password.
+            We sent a password reset link to <strong>{email}</strong>. Please
+            check your email and follow the link to reset your password.
           </p>
         </div>
       )}
@@ -89,7 +96,7 @@ export function ForgotPasswordForm() {
           className="w-full rounded-2xl py-6 text-base font-semibold"
           disabled={isSubmitting}
         >
-          {isSubmitting ? "Sending..." : "Send Reset Link"}
+          {isSubmitting ? "Sending..." : strings.forgotPasswordTitle}
         </Button>
       )}
 

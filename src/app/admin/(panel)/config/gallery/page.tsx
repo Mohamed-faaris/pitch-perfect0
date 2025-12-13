@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { toast } from "sonner";
 import {
   FileText,
@@ -25,8 +25,12 @@ import {
   DialogTitle,
 } from "~/components/ui/dialog";
 import { api } from "~/trpc/react";
+import { useLanguage } from "~/lib/language-context";
+import allTranslations from "~/lib/translations/all";
 
 export default function AdminGalleryPage() {
+  const { language } = useLanguage();
+  const strings = useMemo(() => allTranslations.admin[language], [language]);
   const [showUploadForm, setShowUploadForm] = useState(false);
   const [deleteItem, setDeleteItem] = useState<{
     id: number;
@@ -44,31 +48,35 @@ export default function AdminGalleryPage() {
   const confirmDelete = async () => {
     if (!deleteItem) return;
 
-    await toast.promise(deleteMutation.mutateAsync({ id: deleteItem.id }), {
+    const p = deleteMutation.mutateAsync({ id: deleteItem.id });
+    void toast.promise(p, {
       loading: "Deleting gallery item...",
       success: "Gallery item deleted",
       error: "Failed to delete gallery item",
     });
+    await p;
 
     setDeleteItem(null);
-    refetch();
+    void refetch();
   };
 
   const handleToggleActive = async (ids: number[], isActive: boolean) => {
-    await toast.promise(toggleActiveMutation.mutateAsync({ ids, isActive }), {
+    const p = toggleActiveMutation.mutateAsync({ ids, isActive });
+    void toast.promise(p, {
       loading: `Updating ${ids.length} item(s)...`,
       success: `Gallery items ${isActive ? "activated" : "deactivated"}`,
       error: "Failed to update gallery items",
     });
+    await p;
 
-    refetch();
+    void refetch();
   };
 
   if (isLoading) {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Gallery Management</h1>
+          <h1 className="text-3xl font-bold">{strings.galleryTitle}</h1>
         </div>
         <div className="flex items-center justify-center py-12">
           <p>Loading...</p>
@@ -80,7 +88,7 @@ export default function AdminGalleryPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Gallery Management</h1>
+        <h1 className="text-3xl font-bold">{strings.galleryTitle}</h1>
         <Button onClick={() => setShowUploadForm(true)} size="sm">
           <Plus className="h-5 w-5" />
         </Button>
@@ -89,7 +97,7 @@ export default function AdminGalleryPage() {
       <Dialog open={showUploadForm} onOpenChange={setShowUploadForm}>
         <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Upload to Gallery</DialogTitle>
+            <DialogTitle>{strings.galleryTitle}</DialogTitle>
             <DialogDescription>
               Add new images or videos to the gallery
             </DialogDescription>
@@ -97,7 +105,7 @@ export default function AdminGalleryPage() {
           <GalleryUploadForm
             onUploadSuccess={() => {
               setShowUploadForm(false);
-              refetch();
+              void refetch();
             }}
           />
         </DialogContent>
@@ -147,7 +155,7 @@ export default function AdminGalleryPage() {
                                 ? item.thumbnailUrl
                                 : item.cloudinaryUrl
                             }
-                            alt={item.altText || item.title}
+                            alt={item.altText ?? item.title ?? ""}
                             fill
                             className="object-cover"
                           />
@@ -211,7 +219,10 @@ export default function AdminGalleryPage() {
                             size="sm"
                             className="h-8 w-8 p-0"
                             onClick={() =>
-                              setDeleteItem({ id: item.id, title: item.title })
+                              setDeleteItem({
+                                id: item.id,
+                                title: item.title ?? "",
+                              })
                             }
                             disabled={deleteMutation.isPending}
                           >

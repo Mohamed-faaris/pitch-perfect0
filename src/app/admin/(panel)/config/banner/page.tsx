@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { toast } from "sonner";
 import {
   Video,
@@ -25,8 +25,12 @@ import {
   DialogTitle,
 } from "~/components/ui/dialog";
 import { api } from "~/trpc/react";
+import { useLanguage } from "~/lib/language-context";
+import allTranslations from "~/lib/translations/all";
 
 export default function AdminBannerPage() {
+  const { language } = useLanguage();
+  const strings = useMemo(() => allTranslations.admin[language], [language]);
   const [showUploadForm, setShowUploadForm] = useState(false);
   const [deleteItem, setDeleteItem] = useState<{
     id: number;
@@ -44,31 +48,35 @@ export default function AdminBannerPage() {
   const confirmDelete = async () => {
     if (!deleteItem) return;
 
-    await toast.promise(deleteMutation.mutateAsync({ id: deleteItem.id }), {
+    const p = deleteMutation.mutateAsync({ id: deleteItem.id });
+    void toast.promise(p, {
       loading: "Deleting banner item...",
       success: "Banner item deleted",
       error: "Failed to delete banner item",
     });
+    await p;
 
     setDeleteItem(null);
-    refetch();
+    void refetch();
   };
 
   const handleToggleActive = async (ids: number[], isActive: boolean) => {
-    await toast.promise(toggleActiveMutation.mutateAsync({ ids, isActive }), {
+    const p = toggleActiveMutation.mutateAsync({ ids, isActive });
+    void toast.promise(p, {
       loading: `Updating ${ids.length} item(s)...`,
       success: `Banner items ${isActive ? "activated" : "deactivated"}`,
       error: "Failed to update banner items",
     });
+    await p;
 
-    refetch();
+    void refetch();
   };
 
   if (isLoading) {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Banner Management</h1>
+          <h1 className="text-3xl font-bold">{strings.bannerTitle}</h1>
         </div>
         <div className="flex items-center justify-center py-12">
           <p>Loading...</p>
@@ -80,7 +88,7 @@ export default function AdminBannerPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Banner Management</h1>
+        <h1 className="text-3xl font-bold">{strings.bannerTitle}</h1>
         <Button onClick={() => setShowUploadForm(true)} size="sm">
           <Plus className="h-5 w-5" />
         </Button>
@@ -89,7 +97,7 @@ export default function AdminBannerPage() {
       <Dialog open={showUploadForm} onOpenChange={setShowUploadForm}>
         <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Upload Banner</DialogTitle>
+            <DialogTitle>{strings.bannerTitle}</DialogTitle>
             <DialogDescription>
               Add new images, videos, or GIFs to the banner rotation
             </DialogDescription>
@@ -97,7 +105,7 @@ export default function AdminBannerPage() {
           <BannerUploadForm
             onUploadSuccess={() => {
               setShowUploadForm(false);
-              refetch();
+              void refetch();
             }}
           />
         </DialogContent>
@@ -143,7 +151,7 @@ export default function AdminBannerPage() {
                         <div className="relative h-12 w-12 overflow-hidden rounded">
                           <Image
                             src={item.cloudinaryUrl}
-                            alt={item.altText || item.title || "Banner"}
+                            alt={item.altText ?? item.title ?? "Banner"}
                             fill
                             className="object-cover"
                           />
@@ -163,7 +171,7 @@ export default function AdminBannerPage() {
                       <td className="px-2 py-3">
                         <div className="max-w-xs">
                           <p className="truncate font-medium">
-                            {item.title || "Untitled"}
+                            {item.title ?? "Untitled"}
                           </p>
                           {item.description && (
                             <p className="text-muted-foreground truncate text-xs">
@@ -273,7 +281,7 @@ export default function AdminBannerPage() {
             <DialogTitle>Delete banner item</DialogTitle>
             <DialogDescription>
               {deleteItem
-                ? `Are you sure you want to delete "${deleteItem.title || "this item"}"? This action cannot be undone.`
+                ? `Are you sure you want to delete "${deleteItem.title ?? "this item"}"? This action cannot be undone.`
                 : "Are you sure you want to delete this item?"}
             </DialogDescription>
           </DialogHeader>

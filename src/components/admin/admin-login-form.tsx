@@ -1,16 +1,20 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 
 import { authClient } from "~/server/better-auth/client";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { useLanguage } from "~/lib/language-context";
+import allTranslations from "~/lib/translations/all";
 
 export function AdminLoginForm() {
   const router = useRouter();
+  const { language } = useLanguage();
+  const strings = useMemo(() => allTranslations.admin[language], [language]);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -42,9 +46,9 @@ export function AdminLoginForm() {
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-2 text-center">
         <p className="text-muted-foreground text-xs tracking-widest uppercase">
-          Admin Console
+          {strings.panelTitle}
         </p>
-        <h1 className="text-2xl font-semibold">Sign in to continue</h1>
+        <h1 className="text-2xl font-semibold">{strings.loginTitle}</h1>
         <p className="text-muted-foreground text-sm">
           Use your staff email and password managed by Pitch Perfect.
         </p>
@@ -97,7 +101,7 @@ export function AdminLoginForm() {
         className="w-full rounded-2xl py-6 text-base font-semibold"
         disabled={isSubmitting}
       >
-        {isSubmitting ? "Signing in…" : "Login"}
+        {isSubmitting ? "Signing in…" : strings.loginTitle}
       </Button>
     </form>
   );

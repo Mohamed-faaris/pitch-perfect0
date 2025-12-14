@@ -69,6 +69,9 @@ export const timeSlots = createTable(
     date: d.date().notNull(),
     status: timeSlotStatusEnum().notNull().default("available"),
 
+    fullAmount: d.integer().notNull().default(800), // in rupees
+    advanceAmount: d.integer().notNull().default(100), // in rupees
+
     createdAt: d.timestamp({ withTimezone: true }).defaultNow().notNull(),
     updatedAt: d.timestamp({ withTimezone: true }).$onUpdate(() => new Date()),
     updatedBy: d.integer().references(() => managers.id),
@@ -440,6 +443,8 @@ export const configTable = createTable("config", (d) => ({
       from: `${String(i).padStart(2, "0")}:00:00`,
       to: `${String(i + 1).padStart(2, "0")}:00:00`,
       status: "available" as const,
+      fullAmount:800,
+      advanceAmount:100
     })),
     avoidSlots:[{}],//structure: {from: "HH:MM:SS", to: "HH:MM:SS",date: "YYYY-MM-DD"} sorted by date
     daysInAdvanceToCreateSlots: 3// number of days in advance to create slots

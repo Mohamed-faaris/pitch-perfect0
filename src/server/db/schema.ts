@@ -69,8 +69,8 @@ export const timeSlots = createTable(
     date: d.date().notNull(),
     status: timeSlotStatusEnum().notNull().default("available"),
 
-    fullAmount: d.integer().notNull().default(800), // in rupees
-    advanceAmount: d.integer().notNull().default(100), // in rupees
+    fullAmount: d.integer().notNull().default(800_00), // in paise
+    advanceAmount: d.integer().notNull().default(100_00), // in paise
 
     createdAt: d.timestamp({ withTimezone: true }).defaultNow().notNull(),
     updatedAt: d.timestamp({ withTimezone: true }).$onUpdate(() => new Date()),
@@ -247,15 +247,25 @@ export const coupons = createTable("coupon", (d) => ({
   code: d.varchar({ length: 50 }).notNull().unique(),
   description: d.text(),
 
-  discountPercentage: d.integer().notNull(),
-  maxDiscountAmount: d.integer().notNull().default(0), // 0 means no limit
-  minimumPurchaseAmount: d.integer().notNull().default(0), // 0 means no minimum
+  flatDiscountAmount: d.integer().notNull().default(0), // in paise
+  maxFlatDiscountAmount: d.integer().notNull().default(0), // in paise
+
+  showCoupon: d.boolean().notNull().default(true),
+
+  //conditions
+  minimumBookingAmount: d.integer().notNull().default(0), // in paise
+  firstNBookingsOnly: d.integer().notNull().default(0), // 0 means no limit
+  nthPurchaseOnly: d.integer().notNull().default(0), // 0 means no restriction
 
   validFrom: d.date().notNull(),
   validTo: d.date().notNull(),
+  
   usageLimit: d.integer().notNull().default(0), // 0 means unlimited
   numberOfUses: d.integer().notNull().default(0),
 
+
+  createdBy: d.integer().references(() => managers.id),
+  updatedBy: d.integer().references(() => managers.id),
   createdAt: d
     .timestamp({ withTimezone: true })
     .$defaultFn(() => new Date())
@@ -443,8 +453,8 @@ export const configTable = createTable("config", (d) => ({
       from: `${String(i).padStart(2, "0")}:00:00`,
       to: `${String(i + 1).padStart(2, "0")}:00:00`,
       status: "available" as const,
-      fullAmount:800,
-      advanceAmount:100
+      fullAmount:800_00,
+      advanceAmount:100_00,
     })),
     avoidSlots:[{}],//structure: {from: "HH:MM:SS", to: "HH:MM:SS",date: "YYYY-MM-DD"} sorted by date
     daysInAdvanceToCreateSlots: 3// number of days in advance to create slots

@@ -47,8 +47,8 @@ export function GalleryUploadForm({ onUploadSuccess }: GalleryUploadProps) {
     setError(null);
     setSuccess(false);
 
-    if (!formData.file || !formData.title) {
-      setError("Please select a file and enter a title");
+      if (!formData.file) {
+      setError("Please select a file to upload");
       return;
     }
 
@@ -83,9 +83,9 @@ export function GalleryUploadForm({ onUploadSuccess }: GalleryUploadProps) {
           // Save to database via tRPC
           // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
           await createMutation.mutateAsync({
-            title: formData.title,
-            description: formData.description,
-            altText: formData.altText,
+            title: formData.title || undefined,
+            description: formData.description || undefined,
+            altText: formData.altText || undefined,
             mediaType: formData.mediaType,
             credits: formData.credits || undefined,
             phoneNumber: formData.phoneNumber || undefined,
@@ -177,15 +177,14 @@ export function GalleryUploadForm({ onUploadSuccess }: GalleryUploadProps) {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="title">Title</Label>
+        <Label htmlFor="title">Title (optional)</Label>
         <Input
           id="title"
           value={formData.title}
           onChange={(e) =>
             setFormData((prev) => ({ ...prev, title: e.target.value }))
           }
-          placeholder="Gallery item title"
-          required
+          placeholder="Gallery item title (optional)"
           disabled={isUploading}
         />
       </div>

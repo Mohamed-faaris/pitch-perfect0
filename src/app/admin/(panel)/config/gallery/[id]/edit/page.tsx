@@ -240,28 +240,27 @@ export default function EditGalleryPage() {
                   htmlFor="title"
                   className="text-muted-foreground text-sm"
                 >
-                  Title
-                ) : (
-                  <select
-                    id="status"
-                    aria-label="Status"
-                    value={formData.status}
+                  Title (optional)
+                </Label>
+                {isEditing ? (
+                  <Input
+                    id="title"
+                    value={formData.title}
                     onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        status: e.target.value as
-                          | "approved"
-                          | "inactive"
-                          | "discarded",
-                      })
+                      setFormData({ ...formData, title: e.target.value })
                     }
-                    className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus:ring-ring mt-1 w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    <option value="approved">Active (Approved)</option>
-                    <option value="inactive">Inactive</option>
-                    <option value="discarded">Discarded</option>
-                  </select>
+                    placeholder="Gallery item title (optional)"
+                    className="mt-1"
+                  />
                 ) : (
+                  <p className="mt-1 font-medium">{formData.title || "—"}</p>
+                )}
+              </div>
+
+              <div>
+                <Label
+                  htmlFor="description"
+                  className="text-muted-foreground text-sm"
                 >
                   Description
                 </Label>
@@ -367,6 +366,7 @@ export default function EditGalleryPage() {
                 {isEditing ? (
                   <select
                     id="status"
+                    aria-label="Status"
                     value={formData.status}
                     onChange={(e) =>
                       setFormData({

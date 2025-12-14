@@ -44,8 +44,8 @@ export function BannerUploadForm({ onUploadSuccess }: BannerUploadProps) {
     setError(null);
     setSuccess(false);
 
-    if (!formData.file || !formData.title) {
-      setError("Please select a file and enter a title");
+    if (!formData.file) {
+      setError("Please select a file to upload");
       return;
     }
 
@@ -76,7 +76,7 @@ export function BannerUploadForm({ onUploadSuccess }: BannerUploadProps) {
             (await uploadResponse.json()) as CloudinaryUploadResult;
 
           await createMutation.mutateAsync({
-            title: formData.title,
+            title: formData.title || undefined,
             description: formData.description || undefined,
             altText: formData.altText || undefined,
             mediaType: formData.mediaType,
@@ -166,15 +166,14 @@ export function BannerUploadForm({ onUploadSuccess }: BannerUploadProps) {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="title">Title</Label>
+        <Label htmlFor="title">Title (optional)</Label>
         <Input
           id="title"
           value={formData.title}
           onChange={(e) =>
             setFormData((prev) => ({ ...prev, title: e.target.value }))
           }
-          placeholder="Banner title"
-          required
+          placeholder="Banner title (optional)"
           disabled={isUploading}
         />
       </div>

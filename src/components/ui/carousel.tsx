@@ -16,7 +16,11 @@ interface CarouselProps {
   scrollable?: boolean;
 }
 
-export function Carousel({ slides, autoPlayInterval = 4000 }: CarouselProps) {
+export function Carousel({
+  slides,
+  autoPlayInterval = 4000,
+  scrollable = false,
+}: CarouselProps) {
   const [current, setCurrent] = useState(0);
   // `displayed` is the index currently being rendered. We only update it
   // after the next image has finished loading which prevents a white flash
@@ -28,19 +32,19 @@ export function Carousel({ slides, autoPlayInterval = 4000 }: CarouselProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    // disable autoplay when in scrollable mode
-    if (({} as CarouselProps).scrollable) return;
+    if (scrollable) return;
 
     const timer = setInterval(() => {
       setCurrent((prev) => (prev + 1) % slides.length);
     }, autoPlayInterval);
     return () => clearInterval(timer);
-  }, [slides.length, autoPlayInterval]);
+  }, [slides.length, autoPlayInterval, scrollable]);
 
   // Preload the target `current` slide, and only update `displayed` when
   // the image has loaded. This keeps the previous image visible until the
   // next one is ready to render, eliminating the white flash.
   useEffect(() => {
+    if (scrollable) return;
     if (!slides || slides.length === 0) return;
 
     let cancelled = false;
@@ -71,6 +75,7 @@ export function Carousel({ slides, autoPlayInterval = 4000 }: CarouselProps) {
 
   // If scrollable, observe scroll position and update `current`
   useEffect(() => {
+    if (!scrollable) return;
     const el = containerRef.current;
     if (!el) return;
 
@@ -90,7 +95,7 @@ export function Carousel({ slides, autoPlayInterval = 4000 }: CarouselProps) {
       el.removeEventListener("scroll", onScroll);
       if (raf) cancelAnimationFrame(raf);
     };
-  }, [slides.length]);
+  }, [slides.length, scrollable]);
 
   const goToSlide = (index: number) => {
     setCurrent(index);
@@ -98,34 +103,54 @@ export function Carousel({ slides, autoPlayInterval = 4000 }: CarouselProps) {
 
   return (
     <div className="bg-muted relative w-full overflow-hidden rounded-2xl">
-      {/* Scrollable variant */}
       <div
         ref={containerRef}
-        className={`relative h-56 w-full ${
-          (containerRef.current?.dataset as any)?.scrollable ? "" : ""
-        }`}
+        className={
+          scrollable
+            ? "relative flex h-56 w-full snap-x snap-mandatory overflow-x-auto overflow-y-hidden scroll-smooth"
+            : "relative h-56 w-full"
+        }
+        style={
+          scrollable ? ({ WebkitOverflowScrolling: "touch" } as any) : undefined
+        }
       >
-        {/** If the consumer wants a scrollable carousel they can enable native snapping by setting `scrollable` prop. */}
-        {/** We detect by checking presence of a boolean prop on the function arguments — easiest is to read via (arguments.callee) is not allowed, so instead accept the prop via destructuring earlier. */}
-        {/* Non-scrollable (default) */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={displayed}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.25 }}
-            className="absolute inset-0"
-          >
-            <Image
-              src={slides[displayed]!.src}
-              alt={slides[displayed]!.alt}
-              fill
-              className="object-cover"
-              priority
-            />
-          </motion.div>
-        </AnimatePresence>
+        {scrollable ? (
+          slides.map((slide) => (
+            <div
+              key={slide.id}
+              className="relative h-56 w-full shrink-0 snap-center"
+            >
+              <Image
+                src={slide.src}
+                alt={slide.alt}
+                fill
+                className="object-cover"
+                draggable={false}
+                priority
+              />
+            </div>
+          ))
+        ) : (
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={displayed}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.25 }}
+              className="absolute inset-0"
+            >
+              <Image
+                src={slides[displayed]!.src}
+                alt={slides[displayed]!.alt}
+                fill
+                className="object-cover"
+                draggable={false}
+                priority
+              />
+            </motion.div>
+          </AnimatePresence>
+        )}
 
         {/* Dots indicator */}
         <div className="absolute right-0 bottom-4 left-0 flex justify-center gap-2">
@@ -133,9 +158,8 @@ export function Carousel({ slides, autoPlayInterval = 4000 }: CarouselProps) {
             <button
               key={index}
               onClick={() => {
-                // If scrollable, scroll the container, else change current
                 const el = containerRef.current;
-                if (el && el.scrollWidth > el.clientWidth) {
+                if (scrollable && el) {
                   el.scrollTo({
                     left: index * el.clientWidth,
                     behavior: "smooth",

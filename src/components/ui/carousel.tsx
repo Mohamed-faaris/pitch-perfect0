@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import Image from "next/image";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, PanInfo, useMotionValue } from "motion/react";
 
 interface CarouselSlide {
   id: string;
@@ -22,56 +22,55 @@ export function Carousel({
   scrollable = false,
 }: CarouselProps) {
   const [current, setCurrent] = useState(0);
-  // `displayed` is the index currently being rendered. We only update it
-  // after the next image has finished loading which prevents a white flash
-  // when switching slides.
-  const [displayed, setDisplayed] = useState(0);
+  const x = useMotionValue(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState(0);
+  const [dragging, setDragging] = useState(false);
 
-  if (!slides || slides.length === 0) return null;
-
-  const containerRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const updateWidth = () => {
+      if (containerRef.current) {
+        setContainerWidth(containerRef.current.clientWidth);
+      }
+    };
+    updateWidth();
+    window.addEventListener("resize", updateWidth);
+    return () => window.removeEventListener("resize", updateWidth);
+  }, []);
 
   useEffect(() => {
     if (scrollable) return;
 
     const timer = setInterval(() => {
-      setCurrent((prev) => (prev + 1) % slides.length);
+      if (!dragging) {
+        setCurrent((prev) => (prev + 1) % slides.length);
+      }
     }, autoPlayInterval);
     return () => clearInterval(timer);
-  }, [slides.length, autoPlayInterval, scrollable]);
+  }, [slides.length, autoPlayInterval, scrollable, dragging]);
 
-  // Preload the target `current` slide, and only update `displayed` when
-  // the image has loaded. This keeps the previous image visible until the
-  // next one is ready to render, eliminating the white flash.
   useEffect(() => {
     if (scrollable) return;
-    if (!slides || slides.length === 0) return;
+    x.set(-current * containerWidth);
+  }, [current, containerWidth, scrollable]);
 
-    let cancelled = false;
-    const src = slides[current]?.src;
-    if (!src) return;
+  const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    setDragging(false);
+    const currentX = x.get();
+    const newIndex = Math.round(-currentX / containerWidth);
+    const clampedIndex = Math.max(0, Math.min(slides.length - 1, newIndex));
+    setCurrent(clampedIndex);
+    x.set(-clampedIndex * containerWidth);
+  };
 
-    const img = document.createElement("img") as HTMLImageElement;
-    img.src = src;
-    img.onload = () => {
-      if (!cancelled) setDisplayed(current);
-    };
+  const goToSlide = (index: number) => {
+    setCurrent(index);
+    if (!scrollable) {
+      x.set(-index * containerWidth);
+    }
+  };
 
-    // In case of an error, still switch after a short timeout so the
-    // carousel stays responsive.
-    img.onerror = () => {
-      if (!cancelled) {
-        // small delay to avoid abrupt changes if many errors
-        setTimeout(() => {
-          if (!cancelled) setDisplayed(current);
-        }, 200);
-      }
-    };
-
-    return () => {
-      cancelled = true;
-    };
-  }, [current, slides]);
+  if (!slides || slides.length === 0) return null;
 
   // If scrollable, observe scroll position and update `current`
   useEffect(() => {
@@ -86,7 +85,6 @@ export function Carousel({
         const width = el.clientWidth || 1;
         const idx = Math.round(el.scrollLeft / width);
         setCurrent(Math.max(0, Math.min(slides.length - 1, idx)));
-        setDisplayed(Math.max(0, Math.min(slides.length - 1, idx)));
       });
     };
 
@@ -97,10 +95,6 @@ export function Carousel({
     };
   }, [slides.length, scrollable]);
 
-  const goToSlide = (index: number) => {
-    setCurrent(index);
-  };
-
   return (
     <div className="bg-muted relative w-full overflow-hidden rounded-2xl">
       <div
@@ -108,7 +102,7 @@ export function Carousel({
         className={
           scrollable
             ? "relative flex h-56 w-full snap-x snap-mandatory overflow-x-auto overflow-y-hidden scroll-smooth"
-            : "relative h-56 w-full"
+            : "relative h-56 w-full overflow-hidden"
         }
         style={
           scrollable ? ({ WebkitOverflowScrolling: "touch" } as any) : undefined
@@ -131,25 +125,37 @@ export function Carousel({
             </div>
           ))
         ) : (
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={displayed}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.25 }}
-              className="absolute inset-0"
-            >
-              <Image
-                src={slides[displayed]!.src}
-                alt={slides[displayed]!.alt}
-                fill
-                className="object-cover"
-                draggable={false}
-                priority
-              />
-            </motion.div>
-          </AnimatePresence>
+          <motion.div
+            className="flex h-56"
+            style={{
+              width: containerWidth * slides.length,
+              x,
+            }}
+            drag="x"
+            dragConstraints={{
+              left: -(slides.length - 1) * containerWidth,
+              right: 0,
+            }}
+            onDragStart={() => setDragging(true)}
+            onDragEnd={handleDragEnd}
+          >
+            {slides.map((slide) => (
+              <div
+                key={slide.id}
+                className="relative h-56 w-full shrink-0"
+                style={{ width: containerWidth }}
+              >
+                <Image
+                  src={slide.src}
+                  alt={slide.alt}
+                  fill
+                  className="object-cover"
+                  draggable={false}
+                  priority
+                />
+              </div>
+            ))}
+          </motion.div>
         )}
 
         {/* Dots indicator */}

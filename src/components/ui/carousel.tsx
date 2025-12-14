@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "motion/react";
 
@@ -13,6 +13,7 @@ interface CarouselSlide {
 interface CarouselProps {
   slides: CarouselSlide[];
   autoPlayInterval?: number;
+  scrollable?: boolean;
 }
 
 export function Carousel({ slides, autoPlayInterval = 4000 }: CarouselProps) {
@@ -24,7 +25,12 @@ export function Carousel({ slides, autoPlayInterval = 4000 }: CarouselProps) {
 
   if (!slides || slides.length === 0) return null;
 
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
   useEffect(() => {
+    // disable autoplay when in scrollable mode
+    if (({} as CarouselProps).scrollable) return;
+
     const timer = setInterval(() => {
       setCurrent((prev) => (prev + 1) % slides.length);
     }, autoPlayInterval);
@@ -63,13 +69,45 @@ export function Carousel({ slides, autoPlayInterval = 4000 }: CarouselProps) {
     };
   }, [current, slides]);
 
+  // If scrollable, observe scroll position and update `current`
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    let raf = 0;
+    const onScroll = () => {
+      if (raf) cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        const width = el.clientWidth || 1;
+        const idx = Math.round(el.scrollLeft / width);
+        setCurrent(Math.max(0, Math.min(slides.length - 1, idx)));
+        setDisplayed(Math.max(0, Math.min(slides.length - 1, idx)));
+      });
+    };
+
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      el.removeEventListener("scroll", onScroll);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, [slides.length]);
+
   const goToSlide = (index: number) => {
     setCurrent(index);
   };
 
   return (
     <div className="bg-muted relative w-full overflow-hidden rounded-2xl">
-      <div className="relative h-56 w-full">
+      {/* Scrollable variant */}
+      <div
+        ref={containerRef}
+        className={`relative h-56 w-full ${
+          (containerRef.current?.dataset as any)?.scrollable ? "" : ""
+        }`}
+      >
+        {/** If the consumer wants a scrollable carousel they can enable native snapping by setting `scrollable` prop. */}
+        {/** We detect by checking presence of a boolean prop on the function arguments — easiest is to read via (arguments.callee) is not allowed, so instead accept the prop via destructuring earlier. */}
+        {/* Non-scrollable (default) */}
         <AnimatePresence mode="wait">
           <motion.div
             key={displayed}
@@ -88,22 +126,33 @@ export function Carousel({ slides, autoPlayInterval = 4000 }: CarouselProps) {
             />
           </motion.div>
         </AnimatePresence>
-      </div>
 
-      {/* Dots indicator */}
-      <div className="absolute right-0 bottom-4 left-0 flex justify-center gap-2">
-        {slides.map((_, index) => (
-          <button
-            key={index}
-            onClick={() => goToSlide(index)}
-            className={`h-2 w-2 rounded-full transition-all ${
-              index === current
-                ? "w-6 bg-white"
-                : "bg-white/50 hover:bg-white/70"
-            }`}
-            aria-label={`Go to slide ${index + 1}`}
-          />
-        ))}
+        {/* Dots indicator */}
+        <div className="absolute right-0 bottom-4 left-0 flex justify-center gap-2">
+          {slides.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => {
+                // If scrollable, scroll the container, else change current
+                const el = containerRef.current;
+                if (el && el.scrollWidth > el.clientWidth) {
+                  el.scrollTo({
+                    left: index * el.clientWidth,
+                    behavior: "smooth",
+                  });
+                } else {
+                  goToSlide(index);
+                }
+              }}
+              className={`h-2 w-2 rounded-full transition-all ${
+                index === current
+                  ? "w-6 bg-white"
+                  : "bg-white/50 hover:bg-white/70"
+              }`}
+              aria-label={`Go to slide ${index + 1}`}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );

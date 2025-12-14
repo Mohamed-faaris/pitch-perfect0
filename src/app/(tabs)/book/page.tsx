@@ -158,7 +158,7 @@ const fireSideCannons = () => {
 
 function useSlotBoard() {
   const { data } = api.timeSlot.getAllAvailable.useQuery(
-    { limit: 24 * 7 },
+    { limit: 24 * 1 },
     { staleTime: 60_000 },
   );
 

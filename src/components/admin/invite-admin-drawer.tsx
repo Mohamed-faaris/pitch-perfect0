@@ -22,7 +22,16 @@ export function InviteAdminDrawer() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  const inviteAdminMutation = api.superAdmin.inviteAdmin.useMutation();
+  const ctx = api.useContext();
+  const inviteAdminMutation = api.superAdmin.inviteAdmin.useMutation({
+    onSuccess: async () => {
+      try {
+        await ctx.superAdmin.adminsList.invalidate();
+      } catch (err) {
+        // ignore
+      }
+    },
+  });
   const isPending = inviteAdminMutation.isPending ?? false;
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {

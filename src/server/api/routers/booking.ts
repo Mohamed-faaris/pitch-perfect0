@@ -440,7 +440,7 @@ export const bookingRouter = createTRPCRouter({
                     }
 
                     // Check Nth purchase only
-                    const isNthPurchaseValid = coupon.nthPurchaseOnly === 0 
+                    const isNthPurchaseValid = coupon.nthPurchaseOnly === 0
                         || (customerBookingCount + 1) === coupon.nthPurchaseOnly;
 
                     // Check usage limit

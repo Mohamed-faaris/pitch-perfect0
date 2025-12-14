@@ -884,10 +884,10 @@ export default function BookingPage() {
                       <div
                         key={coupon.id}
                         className={cn(
-                          "rounded-2xl border p-3 text-sm cursor-pointer transition",
+                          "cursor-pointer rounded-2xl border p-3 text-sm transition",
                           coupon.isEligible
-                            ? "bg-green-50 border-green-200 hover:bg-green-100"
-                            : "bg-gray-50 border-gray-200 opacity-60",
+                            ? "border-green-200 bg-green-50 hover:bg-green-100"
+                            : "border-gray-200 bg-gray-50 opacity-60",
                         )}
                         onClick={() => {
                           if (coupon.isEligible && !appliedCoupon) {
@@ -906,12 +906,12 @@ export default function BookingPage() {
                               )}
                             </p>
                             {coupon.description && (
-                              <p className="text-xs text-muted-foreground">
+                              <p className="text-muted-foreground text-xs">
                                 {coupon.description}
                               </p>
                             )}
                             {!coupon.isEligible && coupon.reason && (
-                              <p className="text-xs text-red-600 mt-1">
+                              <p className="mt-1 text-xs text-red-600">
                                 {coupon.reason}
                               </p>
                             )}

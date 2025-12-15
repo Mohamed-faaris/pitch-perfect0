@@ -53,25 +53,32 @@ export const bookingRouter = createTRPCRouter({
                 throw new Error("Some time slots are not available");
             }
 
-            // Determine amounts based on payment type
-            const totalAmount = 80000; // ₹800 in paise
-            const amountPaid = input.paymentType === "full" ? 80000 : 10000; // Full: ₹800, Advance: ₹100
-            const status: "advancePaid" | "fullPaid" = input.paymentType === "full" ? "fullPaid" : "advancePaid";
-
             // Generate 4-digit verification code
             const verificationCode = Math.floor(1000 + Math.random() * 9000).toString();
 
-            // Create bookings
-            const bookingInserts = input.timeSlotIds.map(timeSlotId => ({
-                phoneNumber: input.number,
-                timeSlotId,
-                totalAmount,
-                amountPaid,
-                status,
-                verificationCode,
-                bookingType: input.bookingType,
-                couponId: input.couponId, // Add coupon ID
-            }));
+            // Create bookings with amounts from actual slots
+            const bookingInserts = input.timeSlotIds.map(timeSlotId => {
+                // Find the slot to get actual amounts
+                const slot = slots.find(s => s.id === timeSlotId);
+                if (!slot) {
+                    throw new Error(`Slot ${timeSlotId} not found`);
+                }
+
+                const totalAmount = slot.fullAmount;
+                const amountPaid = input.paymentType === "full" ? slot.fullAmount : slot.advanceAmount;
+                const status: "advancePaid" | "fullPaid" = input.paymentType === "full" ? "fullPaid" : "advancePaid";
+
+                return {
+                    phoneNumber: input.number,
+                    timeSlotId,
+                    totalAmount,
+                    amountPaid,
+                    status,
+                    verificationCode,
+                    bookingType: input.bookingType,
+                    couponId: input.couponId, // Add coupon ID
+                };
+            });
 
             const result = await db
                 .insert(bookings)
@@ -110,20 +117,24 @@ export const bookingRouter = createTRPCRouter({
             // Send confirmation email if customer has an email
             if (customer[0].email) {
                 try {
-                    await sendBookingConfirmation(customer[0].email, {
-                        customerName: customer[0].name ?? "Customer",
-                        bookingIds: result.map(b => b.id.toString()),
-                        timeSlots: bookingsWithSlots.map(b => ({
-                            date: b.timeSlot?.date ?? "",
-                            from: b.timeSlot?.from ?? "",
-                            to: b.timeSlot?.to ?? "",
-                        })),
-                        bookingType: input.bookingType,
-                        totalAmount: totalAmount,
-                        amountPaid: amountPaid,
-                        paymentStatus: input.paymentType === "full" ? "Full Payment" : "Advance Payment",
-                        verificationCode: verificationCode,
-                    });
+                    // Use first booking for email details
+                    const firstBooking = bookingsWithSlots[0];
+                    if (firstBooking) {
+                        await sendBookingConfirmation(customer[0].email, {
+                            customerName: customer[0].name ?? "Customer",
+                            bookingIds: result.map(b => b.id.toString()),
+                            timeSlots: bookingsWithSlots.map(b => ({
+                                date: b.timeSlot?.date ?? "",
+                                from: b.timeSlot?.from ?? "",
+                                to: b.timeSlot?.to ?? "",
+                            })),
+                            bookingType: input.bookingType,
+                            totalAmount: firstBooking.totalAmount,
+                            amountPaid: firstBooking.amountPaid,
+                            paymentStatus: input.paymentType === "full" ? "Full Payment" : "Advance Payment",
+                            verificationCode: verificationCode,
+                        });
+                    }
                 } catch (emailError) {
                     // Log email error but don't fail the booking
                     console.error("Failed to send booking confirmation email:", emailError);
@@ -401,7 +412,7 @@ export const bookingRouter = createTRPCRouter({
                 .from(bookings)
                 .where(eq(bookings.phoneNumber, input.phoneNumber));
 
-            const customerBookingCount = (customerBookingsResult[0]?.count as number) ?? 0;
+            const customerBookingCount = customerBookingsResult[0]?.count ?? 0;
 
             // Get all active, visible coupons
             const activeCoupons = await db
@@ -435,7 +446,7 @@ export const bookingRouter = createTRPCRouter({
                             .from(bookings)
                             .where(eq(bookings.couponId, coupon.id));
 
-                        const couponUsageCount = (couponUsageCountResult[0]?.count as number) ?? 0;
+                        const couponUsageCount = couponUsageCountResult[0]?.count ?? 0;
                         isFirstNBookingsValid = couponUsageCount < coupon.firstNBookingsOnly;
                     }
 
@@ -451,7 +462,7 @@ export const bookingRouter = createTRPCRouter({
                             .from(bookings)
                             .where(eq(bookings.couponId, coupon.id));
 
-                        const couponUsageCount = (couponUsageCountResult[0]?.count as number) ?? 0;
+                        const couponUsageCount = couponUsageCountResult[0]?.count ?? 0;
                         isUsageLimitValid = couponUsageCount < coupon.usageLimit;
                     }
 

@@ -36,6 +36,8 @@ type SlotView = {
   from: string;
   to: string;
   status: "available" | "booked" | "unavailable";
+  fullAmount: number;
+  advanceAmount: number;
 };
 
 const MAX_SLOTS_PER_DAY = 2 as const;
@@ -73,6 +75,8 @@ const createMockSlots = () => {
           : isBooked
             ? "booked"
             : "available",
+        fullAmount: 80000, // ₹800 in paise
+        advanceAmount: 10000, // ₹100 in paise
       });
     });
   }
@@ -81,8 +85,8 @@ const createMockSlots = () => {
 
 const fallbacks = createMockSlots();
 
-const MotionButton = motion(Button);
-const MotionCard = motion(Card);
+const MotionButton = motion.create(Button);
+const MotionCard = motion.create(Card);
 
 const springy = { type: "spring", stiffness: 260, damping: 20 } as const;
 
@@ -173,6 +177,8 @@ function useSlotBoard() {
           from: slot.from.slice(0, 5),
           to: slot.to.slice(0, 5),
           status: slot.status === "available" ? "available" : "unavailable",
+          fullAmount: slot.fullAmount,
+          advanceAmount: slot.advanceAmount,
         }) satisfies SlotView,
     );
   }, [data]);
@@ -259,10 +265,42 @@ export default function BookingPage() {
   const upsertCustomer = api.customer.upsert.useMutation();
   const bookSlots = api.booking.book.useMutation();
 
-  // Calculate total amount for coupon validation
-  const totalAmountPaise = selectedSlots.length * 80000; // ₹800 per slot in paise
+  const slotFullAmount = selectedSlots[0]?.fullAmount ?? 80000;
+  const slotAdvanceAmount = selectedSlots[0]?.advanceAmount ?? 10000;
 
-  // Get active coupons
+  const totalFullPaise = selectedSlots.reduce(
+    (sum, slot) => sum + slot.fullAmount,
+    0,
+  );
+  const totalAdvancePaise = selectedSlots.reduce(
+    (sum, slot) => sum + slot.advanceAmount,
+    0,
+  );
+
+  const toRupees = (value: number) => `₹${(value / 100).toFixed(0)}`;
+
+  const hasSelection = selectedSlots.length > 0;
+  const advanceLabelPaise = hasSelection
+    ? totalAdvancePaise
+    : slotAdvanceAmount;
+  const fullLabelPaise = hasSelection ? totalFullPaise : slotFullAmount;
+
+  const paymentOptions = useMemo(
+    () => [
+      { key: "advance", label: `${toRupees(advanceLabelPaise)} Advance` },
+      { key: "full", label: `${toRupees(fullLabelPaise)} Full` },
+    ],
+    [advanceLabelPaise, fullLabelPaise],
+  );
+  const totalAmountPaise = totalFullPaise;
+
+  const { data: customerBookings = [] } = api.booking.getByNumber.useQuery(
+    { number: storedPhone },
+    { enabled: !!storedPhone && isHydrated },
+  );
+
+  const bookingCountForCoupons = customerBookings.length;
+
   const { data: activeCoupons = [] } = api.booking.getActiveCoupons.useQuery(
     {
       phoneNumber: storedPhone,
@@ -271,20 +309,14 @@ export default function BookingPage() {
     { enabled: !!storedPhone && totalAmountPaise > 0 && isHydrated },
   );
 
-  // Validate coupon query
   const { data: couponValidation } = api.booking.validateCoupon.useQuery(
     {
       couponCode: couponCode.toUpperCase(),
-      bookingCount: 0,
+      bookingCount: bookingCountForCoupons,
       totalAmount: totalAmountPaise,
     },
     { enabled: couponCode.length > 0 && totalAmountPaise > 0 },
   );
-
-  const confirmationCardRef = useRef<HTMLDivElement | null>(null);
-  const primaryConfirmation = confirmation?.[0] ?? null;
-  const confirmationTotalPaid =
-    confirmation?.reduce((sum, booking) => sum + booking.amountPaid, 0) ?? 0;
 
   // Pre-fill customer form when existing customer data is loaded
   useEffect(() => {
@@ -638,6 +670,22 @@ export default function BookingPage() {
                 Clear all
               </Button>
             </div>
+            {selectionCount > 0 && (
+              <div className="border-border/60 text-muted-foreground space-y-1 border-b px-6 pb-3 text-xs">
+                <div className="flex items-center justify-between text-[11px] tracking-wide uppercase">
+                  <span>Advance total</span>
+                  <span className="text-primary font-semibold">
+                    {toRupees(totalAdvancePaise)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-[11px] tracking-wide uppercase">
+                  <span>Full total</span>
+                  <span className="text-primary font-semibold">
+                    {toRupees(totalFullPaise)}
+                  </span>
+                </div>
+              </div>
+            )}
             <div className="grid max-h-72 grid-cols-2 gap-3 overflow-y-auto px-6 pb-4">
               {slotsForSelectedDate.length === 0 ? (
                 <p className="text-muted-foreground col-span-2 text-sm">
@@ -673,6 +721,10 @@ export default function BookingPage() {
                     >
                       <span className="font-semibold">
                         {formatSlotTime(slot.from)} – {formatSlotTime(slot.to)}
+                      </span>
+                      <span className="text-muted-foreground mt-1 text-[11px]">
+                        Advance {toRupees(slot.advanceAmount)} • Full{" "}
+                        {toRupees(slot.fullAmount)}
                       </span>
                       <span className="text-muted-foreground mt-2 inline-flex items-center gap-2 text-xs">
                         {isUnavailable
@@ -776,10 +828,7 @@ export default function BookingPage() {
           Payment
         </h2>
         <div className="grid grid-cols-2 gap-2">
-          {[
-            { key: "advance", label: "₹100 Advance" },
-            { key: "full", label: "₹800 Full" },
-          ].map((option) => {
+          {paymentOptions.map((option) => {
             const isActive = paymentOption === option.key;
             return (
               <MotionButton
@@ -872,129 +921,6 @@ export default function BookingPage() {
                 placeholder={strings.namePlaceholder}
               />
             </div>
-            <section className="space-y-3">
-              <h2 className="text-muted-foreground text-sm font-medium tracking-wide uppercase">
-                Coupon (optional)
-              </h2>
-              <div className="space-y-2">
-                {/* Available Coupons List */}
-                {activeCoupons && activeCoupons.length > 0 && (
-                  <div className="space-y-2">
-                    {activeCoupons.map((coupon) => (
-                      <div
-                        key={coupon.id}
-                        className={cn(
-                          "cursor-pointer rounded-2xl border p-3 text-sm transition",
-                          coupon.isEligible
-                            ? "border-green-200 bg-green-50 hover:bg-green-100"
-                            : "border-gray-200 bg-gray-50 opacity-60",
-                        )}
-                        onClick={() => {
-                          if (coupon.isEligible && !appliedCoupon) {
-                            setCouponCode(coupon.code);
-                          }
-                        }}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
-                            <p className="font-semibold">
-                              {coupon.code}
-                              {coupon.isEligible ? (
-                                <span className="ml-2 text-green-700">✓</span>
-                              ) : (
-                                <span className="ml-2 text-gray-500">✗</span>
-                              )}
-                            </p>
-                            {coupon.description && (
-                              <p className="text-muted-foreground text-xs">
-                                {coupon.description}
-                              </p>
-                            )}
-                            {!coupon.isEligible && coupon.reason && (
-                              <p className="mt-1 text-xs text-red-600">
-                                {coupon.reason}
-                              </p>
-                            )}
-                          </div>
-                          <div className="text-right">
-                            <p className="font-bold text-green-700">
-                              Save ₹{(coupon.discount / 100).toFixed(0)}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Coupon Code Input */}
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Enter coupon code"
-                    value={couponCode}
-                    onChange={(e) => {
-                      setCouponCode(e.target.value);
-                      setAppliedCoupon(null);
-                    }}
-                    className="rounded-2xl"
-                    disabled={selectedSlots.length === 0}
-                  />
-                  {couponValidation?.isValid && !appliedCoupon && (
-                    <Button
-                      type="button"
-                      onClick={() => {
-                        if (couponValidation.isValid) {
-                          setAppliedCoupon({
-                            couponId: couponValidation.couponId!,
-                            discount: couponValidation.discount,
-                            finalAmount: couponValidation.finalAmount,
-                          });
-                          toast.success(couponValidation.message);
-                        }
-                      }}
-                      className="shrink-0 rounded-2xl"
-                    >
-                      Apply
-                    </Button>
-                  )}
-                  {appliedCoupon && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        setAppliedCoupon(null);
-                        setCouponCode("");
-                      }}
-                      className="shrink-0 rounded-2xl"
-                    >
-                      Remove
-                    </Button>
-                  )}
-                </div>
-
-                {/* Applied Coupon Success */}
-                {appliedCoupon && (
-                  <div className="rounded-2xl border border-green-200 bg-green-50 p-3 text-sm">
-                    <p className="font-medium text-green-700">
-                      ✓ Coupon Applied: Save ₹
-                      {(appliedCoupon.discount / 100).toFixed(2)}
-                    </p>
-                    <p className="text-xs text-green-600">
-                      Pay: ₹{(appliedCoupon.finalAmount / 100).toFixed(2)}
-                    </p>
-                  </div>
-                )}
-
-                {/* Validation Error */}
-                {couponValidation &&
-                  !couponValidation.isValid &&
-                  couponCode && (
-                    <div className="rounded-2xl border border-red-200 bg-red-50 p-2 text-xs text-red-700">
-                      {couponValidation.message}
-                    </div>
-                  )}
-              </div>
-            </section>
             <div className="space-y-1">
               <Label htmlFor="email">{strings.emailLabel}</Label>
               <Input
@@ -1046,24 +972,119 @@ export default function BookingPage() {
         )}
       </section>
 
-      {(() => {
-        const advanceAmount = 10000; // ₹100 in paise per slot
-        const fullAmount = 80000; // ₹800 in paise per slot
-        const amountPerSlot =
-          paymentOption === "advance" ? advanceAmount : fullAmount;
-        const displayAmount =
-          paymentOption === "advance"
-            ? appliedCoupon
-              ? Math.ceil(
-                  appliedCoupon.finalAmount / selectedSlots.length / 100,
-                )
-              : 100
-            : appliedCoupon
-              ? Math.ceil(
-                  appliedCoupon.finalAmount / selectedSlots.length / 100,
-                )
-              : 800;
+      <section className="space-y-3">
+        <h2 className="text-muted-foreground text-sm font-medium tracking-wide uppercase">
+          Coupon
+        </h2>
+        <div className="space-y-2">
+          {/* Horizontal Scrollable Coupons */}
+          {activeCoupons && activeCoupons.length > 0 && (
+            <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
+              {activeCoupons.map((coupon) => (
+                <motion.button
+                  key={coupon.id}
+                  onClick={() => {
+                    if (coupon.isEligible && !appliedCoupon) {
+                      setCouponCode(coupon.code);
+                    }
+                  }}
+                  disabled={!coupon.isEligible || !!appliedCoupon}
+                  className={cn(
+                    "flex min-w-[90px] flex-col items-center justify-center rounded-2xl border px-3 py-2 text-xs transition",
+                    coupon.isEligible && !appliedCoupon
+                      ? "border-primary/60 bg-primary/10 text-primary hover:bg-primary/20 dark:border-primary/50 dark:bg-primary/20 dark:text-primary cursor-pointer"
+                      : "border-border bg-muted/70 text-muted-foreground dark:bg-muted/60 dark:text-muted-foreground cursor-not-allowed opacity-60",
+                  )}
+                  whileTap={{
+                    scale: coupon.isEligible && !appliedCoupon ? 0.95 : 1,
+                  }}
+                  whileHover={{
+                    scale: coupon.isEligible && !appliedCoupon ? 1.03 : 1,
+                  }}
+                  transition={springy}
+                >
+                  <p className="font-semibold">{coupon.code}</p>
+                  <p className="text-primary dark:text-primary font-bold">
+                    -{(coupon.discount / 100).toFixed(0)}
+                  </p>
+                </motion.button>
+              ))}
+            </div>
+          )}
 
+          {/* Coupon Code Input */}
+          <div className="flex gap-2">
+            <Input
+              placeholder="Enter coupon code"
+              value={couponCode}
+              onChange={(e) => {
+                setCouponCode(e.target.value);
+                setAppliedCoupon(null);
+              }}
+              className="rounded-2xl"
+              disabled={selectedSlots.length === 0}
+            />
+            {couponValidation?.isValid && !appliedCoupon && (
+              <Button
+                type="button"
+                onClick={() => {
+                  if (couponValidation.isValid) {
+                    setAppliedCoupon({
+                      couponId: couponValidation.couponId!,
+                      discount: couponValidation.discount,
+                      finalAmount: couponValidation.finalAmount,
+                    });
+                    toast.success(couponValidation.message);
+                  }
+                }}
+                className="shrink-0 rounded-2xl"
+              >
+                Apply
+              </Button>
+            )}
+            {appliedCoupon && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setAppliedCoupon(null);
+                  setCouponCode("");
+                }}
+                className="shrink-0 rounded-2xl"
+              >
+                Remove
+              </Button>
+            )}
+          </div>
+
+          {/* Applied Coupon Success */}
+          {appliedCoupon && (
+            <div className="dark:border-primary/60 dark:bg-primary/10 dark:text-primary rounded-2xl border border-green-200 bg-green-50 p-3 text-sm">
+              <p className="dark:text-primary font-medium text-green-700">
+                ✓ Coupon Applied: Save ₹
+                {(appliedCoupon.discount / 100).toFixed(2)}
+              </p>
+              <p className="dark:text-primary/80 text-xs text-green-600">
+                Pay: ₹{(appliedCoupon.finalAmount / 100).toFixed(2)}
+              </p>
+            </div>
+          )}
+
+          {/* Validation Error */}
+          {couponValidation && !couponValidation.isValid && couponCode && (
+            <div className="dark:border-destructive/60 dark:bg-destructive/10 dark:text-destructive rounded-2xl border border-red-200 bg-red-50 p-2 text-xs text-red-700">
+              {couponValidation.message}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {(() => {
+        const totalPaymentPaise =
+          paymentOption === "advance" ? totalAdvancePaise : totalFullPaise;
+        const amountToPay = appliedCoupon
+          ? appliedCoupon.finalAmount
+          : totalPaymentPaise;
         return (
           <MotionButton
             disabled={!formReady || isSubmitting}
@@ -1073,9 +1094,7 @@ export default function BookingPage() {
             whileHover={{ scale: formReady && !isSubmitting ? 1.02 : 1 }}
             transition={springy}
           >
-            {isSubmitting
-              ? strings.processing
-              : `Pay ₹${displayAmount * selectedSlots.length}`}
+            {isSubmitting ? strings.processing : `Pay ${toRupees(amountToPay)}`}
           </MotionButton>
         );
       })()}

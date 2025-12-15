@@ -36,10 +36,7 @@ export const env = createEnv({
    */
   client: {
     // NEXT_PUBLIC_CLIENTVAR: z.string(),
-    NEXT_PUBLIC_BASE_URL:
-      process.env.NODE_ENV === "production"
-        ? z.string().url()
-        : z.string().url().optional(),
+    NEXT_PUBLIC_BASE_URL: z.string(),
   },
 
   /**

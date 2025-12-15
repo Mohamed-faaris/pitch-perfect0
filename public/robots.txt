@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /api/admin/
+
+# Sitemap location
+Sitemap: https://pitchperfect.turf/sitemap.xml
+
+# Recommended crawl delay for polite crawling (seconds)
+Crawl-delay: 10

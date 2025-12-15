@@ -4,6 +4,7 @@ import { type Metadata, type Viewport } from "next";
 import { Geist } from "next/font/google";
 
 import { TRPCReactProvider } from "~/trpc/react";
+import { env } from "~/env";
 import { ThemeProvider } from "~/components/theme-provider";
 import { BookingsProvider } from "~/lib/bookings-context";
 import { LanguageProvider } from "~/lib/language-context";
@@ -12,7 +13,8 @@ import { TopBar } from "~/components/top-bar";
 import { PwaRegister } from "~/components/pwa-register";
 import { Toaster } from "sonner";
 
-const siteUrl = "https://pitchperfect.turf";
+// Use runtime-configured base URL when available, otherwise fall back.
+const siteUrl = env.NEXT_PUBLIC_BASE_URL;
 const description =
   "Mobile-first turf booking experience for Aruppukottai players.";
 

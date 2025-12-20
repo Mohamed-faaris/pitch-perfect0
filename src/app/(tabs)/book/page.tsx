@@ -346,6 +346,16 @@ export default function BookingPage() {
     }
   }, [storedPhone, customer.number]);
 
+  const { data: slotConfig } = api.timeSlot.getSlotConfig.useQuery();
+  const daysToShow = slotConfig?.daysInAdvanceToCouldBook ?? 7;
+
+  const dates = useMemo(() => {
+    const today = new Date();
+    return Array.from({ length: daysToShow }, (_, i) =>
+      format(addDays(today, i), "yyyy-MM-dd"),
+    );
+  }, [daysToShow]);
+
   const slotsByDate = useMemo(() => {
     return slots.reduce<Record<string, SlotView[]>>((acc, slot) => {
       acc[slot.date] ??= [];
@@ -353,14 +363,6 @@ export default function BookingPage() {
       return acc;
     }, {});
   }, [slots]);
-
-  const dates = useMemo(() => {
-    return Object.entries(slotsByDate)
-      .filter(([, list]) => list.some((slot) => slot.status === "available"))
-      .map(([date]) => date)
-      .sort()
-      .slice(0, 7);
-  }, [slotsByDate]);
 
   const slotsForSelectedDate = useMemo(() => {
     return slotsByDate[selectedDate ?? ""] ?? [];

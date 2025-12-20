@@ -5,14 +5,13 @@ import {
     publicProcedure,
 } from "~/server/api/trpc";
 import { db } from "~/server/db";
-import { bookings, timeSlots, customers, coupons, configTable } from "~/server/db/schema";
+import { bookings, timeSlots, customers, coupons} from "~/server/db/schema";
 import { eq, and, inArray, desc, count as countFn } from "drizzle-orm";
 import { sendBookingConfirmation } from "~/server/email";
 import { TRPCError } from "@trpc/server";
 import {
     createSlotFromConfig,
     validateSlotAgainstConfig,
-    validateAdvanceBookingLimit,
     isPastTime,
 } from "~/lib/slot-utils";
 

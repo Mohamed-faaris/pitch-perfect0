@@ -39,6 +39,7 @@ export default function ConfigPage() {
   const [maintenanceMessage, setMaintenanceMessage] = useState("");
   const [bufferMinutes, setBufferMinutes] = useState(3);
   const [daysInAdvance, setDaysInAdvance] = useState(3);
+  const [daysToBook, setDaysToBook] = useState(3);
   const [savingState, setSavingState] = useState<string | null>(null);
   const [maintenanceWarningOpen, setMaintenanceWarningOpen] = useState(false);
   const [pendingMaintenanceValue, setPendingMaintenanceValue] = useState(false);
@@ -49,15 +50,14 @@ export default function ConfigPage() {
       setFullPaymentMode(config.fullPaymentMode ?? false);
       setMaintenanceMessage(config.maintenanceMessage ?? "");
       setBufferMinutes(config.bookingBufferMinutes ?? 3);
-      if (
-        config.slots &&
-        typeof config.slots === "object" &&
-        "daysInAdvanceToCreateSlots" in config.slots
-      ) {
-        setDaysInAdvance(
-          (config.slots as { daysInAdvanceToCreateSlots: number })
-            .daysInAdvanceToCreateSlots,
-        );
+      if (config.slots && typeof config.slots === "object") {
+        const slots = config.slots as any;
+        if ("daysInAdvanceToCreateSlots" in slots) {
+          setDaysInAdvance(slots.daysInAdvanceToCreateSlots);
+        }
+        if ("daysInAdvanceToCouldBook" in slots) {
+          setDaysToBook(slots.daysInAdvanceToCouldBook);
+        }
       }
     }
   }, [config]);
@@ -155,6 +155,26 @@ export default function ConfigPage() {
       toast.success("Days in advance updated");
     } catch (error) {
       toast.error("Failed to update days in advance");
+      console.error(error);
+    } finally {
+      setSavingState(null);
+    }
+  };
+
+  const handleDaysToBookSave = async () => {
+    if (!config?.slots || typeof config.slots !== "object") return;
+
+    setSavingState("daysToBook");
+    try {
+      await configUpdateMutation.mutateAsync({
+        slots: {
+          ...config.slots,
+          daysInAdvanceToCouldBook: daysToBook,
+        },
+      });
+      toast.success("Booking window updated");
+    } catch (error) {
+      toast.error("Failed to update booking window");
       console.error(error);
     } finally {
       setSavingState(null);
@@ -313,6 +333,38 @@ export default function ConfigPage() {
               disabled={savingState === "bufferMinutes"}
             >
               {savingState === "bufferMinutes" ? "Saving..." : "Save"}
+            </Button>
+          </div>
+        </Card>
+
+        {/* Days to Book */}
+        <Card className="border-border/60 bg-card/60 space-y-3 rounded-3xl p-4">
+          <div>
+            <p className="text-sm font-semibold">Booking window (days)</p>
+            <p className="text-muted-foreground text-xs">
+              Number of days users can see and book in advance
+            </p>
+          </div>
+          <div className="flex items-end gap-3">
+            <div className="flex-1">
+              <Input
+                type="number"
+                min="1"
+                value={daysToBook}
+                onChange={(e) =>
+                  setDaysToBook(Math.max(1, parseInt(e.target.value) || 1))
+                }
+                className="rounded-2xl"
+                placeholder="Days"
+              />
+            </div>
+            <Button
+              size="sm"
+              className="rounded-2xl"
+              onClick={handleDaysToBookSave}
+              disabled={savingState === "daysToBook"}
+            >
+              {savingState === "daysToBook" ? "Saving..." : "Save"}
             </Button>
           </div>
         </Card>

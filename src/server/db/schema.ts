@@ -463,33 +463,6 @@ export const couponUsesRelations = relations(couponUses, ({ one }) => ({
 }));
 
 //config table
-export type DayOfWeek =
-  | "monday"
-  | "tuesday"
-  | "wednesday"
-  | "thursday"
-  | "friday"
-  | "saturday"
-  | "sunday";
-
-export interface DayConfig {
-  AvailableSlots: Array<{
-    from: string;
-    to: string;
-    status: "available" | "unavailable";
-    fullAmount?: number;
-    advanceAmount?: number;
-  }>;
-  fullAmount?: number;
-  advanceAmount?: number;
-}
-
-export interface SlotsConfigType {
-  default: DayConfig;
-  weeklyOverrides?: Partial<Record<DayOfWeek, DayConfig>>;
-  daysInAdvanceToCreateSlots: number;
-}
-
 export const configTable = createTable("config", (d) => ({
   id: d.integer().primaryKey().generatedByDefaultAsIdentity(),
   updatedBy: d.integer().references(() => managers.id),

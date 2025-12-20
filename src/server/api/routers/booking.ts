@@ -5,7 +5,7 @@ import {
     publicProcedure,
 } from "~/server/api/trpc";
 import { db } from "~/server/db";
-import { bookings, timeSlots, customers, coupons} from "~/server/db/schema";
+import { bookings, timeSlots, customers, coupons } from "~/server/db/schema";
 import { eq, and, inArray, desc, count as countFn, sql } from "drizzle-orm";
 import { sendBookingConfirmation } from "~/server/email";
 import { TRPCError } from "@trpc/server";

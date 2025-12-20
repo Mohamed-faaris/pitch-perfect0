@@ -164,43 +164,25 @@ export function CouponsClient({ strings }: { strings: Strings }) {
     },
   });
 
-  const toggleShowMutation = api.superAdmin.couponToggleShow.useMutation({
+  const toggleMutation = api.superAdmin.couponToggle.useMutation({
     onMutate: async (variables) => {
       await utils.superAdmin.couponsList.cancel();
       const previousCoupons = utils.superAdmin.couponsList.getData();
       utils.superAdmin.couponsList.setData(undefined, (old) => {
         if (!old) return old;
-        return old.map((c) =>
-          c.id === variables.couponId
-            ? { ...c, showCoupon: variables.showCoupon }
-            : c,
-        );
-      });
-      return { previousCoupons };
-    },
-    onError: (err, variables, context) => {
-      if (context?.previousCoupons) {
-        utils.superAdmin.couponsList.setData(
-          undefined,
-          context.previousCoupons,
-        );
-      }
-      toast.error(err.message);
-    },
-    onSettled: async () => {
-      await utils.superAdmin.couponsList.invalidate();
-    },
-  });
-
-  const toggleStatusMutation = api.superAdmin.couponToggleStatus.useMutation({
-    onMutate: async (variables) => {
-      await utils.superAdmin.couponsList.cancel();
-      const previousCoupons = utils.superAdmin.couponsList.getData();
-      utils.superAdmin.couponsList.setData(undefined, (old) => {
-        if (!old) return old;
-        return old.map((c) =>
-          c.id === variables.couponId ? { ...c, status: variables.status } : c,
-        );
+        return old.map((c) => {
+          if (c.id !== variables.couponId) return c;
+          if (variables.field === "showCoupon") {
+            return { ...c, showCoupon: !c.showCoupon };
+          }
+          if (variables.field === "status") {
+            return {
+              ...c,
+              status: c.status === "active" ? "inactive" : "active",
+            };
+          }
+          return c;
+        });
       });
       return { previousCoupons };
     },
@@ -298,17 +280,16 @@ export function CouponsClient({ strings }: { strings: Strings }) {
   }
 
   async function onToggleShow(coupon: Coupon) {
-    await toggleShowMutation.mutateAsync({
+    await toggleMutation.mutateAsync({
       couponId: coupon.id,
-      showCoupon: !coupon.showCoupon,
+      field: "showCoupon",
     });
   }
 
   async function onToggleStatus(coupon: Coupon) {
-    const newStatus = coupon.status === "active" ? "inactive" : "active";
-    await toggleStatusMutation.mutateAsync({
+    await toggleMutation.mutateAsync({
       couponId: coupon.id,
-      status: newStatus,
+      field: "status",
     });
   }
 
@@ -316,8 +297,7 @@ export function CouponsClient({ strings }: { strings: Strings }) {
     createMutation.isPending ||
     updateMutation.isPending ||
     archiveMutation.isPending ||
-    toggleShowMutation.isPending ||
-    toggleStatusMutation.isPending;
+    toggleMutation.isPending;
 
   return (
     <div className="space-y-6 pb-20">

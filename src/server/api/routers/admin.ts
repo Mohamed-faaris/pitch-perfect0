@@ -1181,6 +1181,48 @@ export const superAdminRouter = createTRPCRouter({
             return { success: true, coupon: updated };
         }),
 
+    couponToggle: superAdminProcedure
+        .input(
+            z.object({
+                couponId: z.string().uuid(),
+                field: z.enum(["showCoupon", "status"]),
+            }),
+        )
+        .mutation(async ({ input }) => {
+            const coupon = await db.query.coupons.findFirst({
+                where: eq(coupons.id, input.couponId),
+            });
+
+            if (!coupon) {
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: "Coupon not found",
+                });
+            }
+
+            let updateData = {};
+            if (input.field === "showCoupon") {
+                updateData = { showCoupon: !coupon.showCoupon };
+            } else if (input.field === "status") {
+                // Toggle between active and inactive. If achieved, don't toggle or handle as needed.
+                if (coupon.status === "achieved") {
+                    throw new TRPCError({
+                        code: "BAD_REQUEST",
+                        message: "Cannot toggle status of an achieved coupon",
+                    });
+                }
+                updateData = { status: coupon.status === "active" ? "inactive" : "active" };
+            }
+
+            const [updated] = await db
+                .update(coupons)
+                .set(updateData)
+                .where(eq(coupons.id, input.couponId))
+                .returning();
+
+            return updated;
+        }),
+
     couponToggleShow: superAdminProcedure
         .input(
             z.object({

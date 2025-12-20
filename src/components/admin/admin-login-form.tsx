@@ -33,11 +33,7 @@ export function AdminLoginForm() {
       router.replace("/admin/dashboard");
       router.refresh();
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : strings.loginError,
-      );
+      setError(err instanceof Error ? err.message : strings.loginError);
       setIsSubmitting(false);
     }
   };
@@ -49,9 +45,7 @@ export function AdminLoginForm() {
           {strings.panelTitle}
         </p>
         <h1 className="text-2xl font-semibold">{strings.loginTitle}</h1>
-        <p className="text-muted-foreground text-sm">
-          {strings.loginDesc}
-        </p>
+        <p className="text-muted-foreground text-sm">{strings.loginDesc}</p>
       </div>
 
       <div className="space-y-4">
@@ -96,77 +90,8 @@ export function AdminLoginForm() {
         </p>
       )}
 
-      <Button
-        type="submit"
-        className="w-full"
-        disabled={isSubmitting}
-      >
+      <Button type="submit" className="w-full" disabled={isSubmitting}>
         {isSubmitting ? strings.loading : strings.loginTitle}
-      </Button>
-    </form>
-  );
-}
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="space-y-2 text-center">
-        <p className="text-muted-foreground text-xs tracking-widest uppercase">
-          {strings.panelTitle}
-        </p>
-        <h1 className="text-2xl font-semibold">{strings.loginTitle}</h1>
-        <p className="text-muted-foreground text-sm">
-          {strings.loginDesc}
-        </p>
-      </div>
-
-      <div className="space-y-4">
-        <div className="space-y-1">
-          <Label htmlFor="admin-email">{strings.email}</Label>
-          <Input
-            id="admin-email"
-            type="email"
-            autoComplete="email"
-            inputMode="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            placeholder="you@example.com"
-            required
-          />
-        </div>
-        <div className="space-y-1">
-          <div className="flex items-center justify-between">
-            <Label htmlFor="admin-password">{strings.password}</Label>
-            <Link
-              href="/admin/forgot-password"
-              className="text-xs font-semibold hover:underline"
-            >
-              {strings.forgot}
-            </Link>
-          </div>
-          <Input
-            id="admin-password"
-            type="password"
-            autoComplete="current-password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            placeholder="••••••••"
-            required
-          />
-        </div>
-      </div>
-
-      {error && (
-        <p className="border-destructive/40 bg-destructive/10 text-destructive rounded-2xl border px-3 py-2 text-sm">
-          {error}
-        </p>
-      )}
-
-      <Button
-        type="submit"
-        className="w-full rounded-2xl py-6 text-base font-semibold"
-        disabled={isSubmitting}
-      >
-        {isSubmitting ? "Signing in…" : strings.loginTitle}
       </Button>
     </form>
   );

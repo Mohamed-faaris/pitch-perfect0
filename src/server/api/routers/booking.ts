@@ -5,17 +5,38 @@ import {
     publicProcedure,
 } from "~/server/api/trpc";
 import { db } from "~/server/db";
-import { bookings, timeSlots, customers, coupons } from "~/server/db/schema";
+import { bookings, timeSlots, customers, coupons, configTable } from "~/server/db/schema";
 import { eq, and, inArray, desc, count as countFn } from "drizzle-orm";
 import { sendBookingConfirmation } from "~/server/email";
+import { TRPCError } from "@trpc/server";
+import {
+    createSlotFromConfig,
+    validateSlotAgainstConfig,
+    validateAdvanceBookingLimit,
+    isPastTime,
+} from "~/lib/slot-utils";
 
 export const bookingRouter = createTRPCRouter({
-    // Book slots using phone number and time slot IDs
+    // Book slots using phone number and time ranges
     book: publicProcedure
         .input(
             z.object({
                 number: z.string().min(1, "Phone number is required"),
-                timeSlotIds: z.array(z.number()).min(1, "At least one time slot is required"),
+                timeSlots: z
+                    .array(
+                        z.object({
+                            date: z
+                                .string()
+                                .regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be YYYY-MM-DD"),
+                            from: z
+                                .string()
+                                .regex(/^\d{2}:\d{2}:\d{2}$/, "Time must be HH:MM:SS"),
+                            to: z
+                                .string()
+                                .regex(/^\d{2}:\d{2}:\d{2}$/, "Time must be HH:MM:SS"),
+                        }),
+                    )
+                    .min(1, "At least one time slot is required"),
                 paymentType: z.enum(["full", "advance"], {
                     required_error: "Payment type is required",
                 }),
@@ -24,103 +45,181 @@ export const bookingRouter = createTRPCRouter({
             })
         )
         .mutation(async ({ input }) => {
-            // Check if customer exists
+            // Step 1: Check if customer exists
             const customer = await db
                 .select()
                 .from(customers)
                 .where(eq(customers.number, input.number));
 
             if (!customer[0]) {
-                throw new Error("Customer not found. Please register your details first.");
-            }
-
-            // Check if all time slots are available
-            const slots = await db
-                .select()
-                .from(timeSlots)
-                .where(
-                    and(
-                        inArray(timeSlots.id, input.timeSlotIds),
-                        eq(timeSlots.status, "available")
-                    )
-                );
-
-            if (slots.length !== input.timeSlotIds.length) {
-                console.log("Some time slots are not available", {
-                    requested: input.timeSlotIds,
-                    available: slots.map(slot => slot.id),
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: "Customer not found. Please register first.",
                 });
-                throw new Error("Some time slots are not available");
             }
 
-            // Generate 4-digit verification code
-            const verificationCode = Math.floor(1000 + Math.random() * 9000).toString();
+            // Step 2: Fetch config
+            const config = await db.query.configTable.findFirst();
+            if (!config?.slots) {
+                throw new TRPCError({
+                    code: "INTERNAL_SERVER_ERROR",
+                    message: "Slot configuration not found",
+                });
+            }
 
-            // Create bookings with amounts from actual slots
-            const bookingInserts = input.timeSlotIds.map(timeSlotId => {
-                // Find the slot to get actual amounts
-                const slot = slots.find(s => s.id === timeSlotId);
-                if (!slot) {
-                    throw new Error(`Slot ${timeSlotId} not found`);
+            // Step 3: Process slots in a transaction
+            return await db.transaction(async (tx) => {
+                const slotsToBook: Array<{
+                    slotId: number;
+                    date: string;
+                    from: string;
+                    to: string;
+                    fullAmount: number;
+                    advanceAmount: number;
+                }> = [];
+
+                for (const { date, from, to } of input.timeSlots) {
+                    // Validate against config
+                    const isValid = validateSlotAgainstConfig(date, from, to, config.slots);
+                    if (!isValid) {
+                        throw new TRPCError({
+                            code: "BAD_REQUEST",
+                            message: `Slot ${date} ${from}-${to} is not valid according to configuration`,
+                        });
+                    }
+
+                    // Check if slot exists in DB
+                    let dbSlot = await tx.query.timeSlots.findFirst({
+                        where: and(
+                            eq(timeSlots.date, date),
+                            eq(timeSlots.from, from),
+                            eq(timeSlots.to, to),
+                        ),
+                    });
+
+                    if (dbSlot) {
+                        // Slot exists - validate it's available
+                        if (dbSlot.status !== "available") {
+                            throw new TRPCError({
+                                code: "CONFLICT",
+                                message: `Slot ${date} ${from}-${to} is already booked`,
+                            });
+                        }
+
+                        // Update status to booked
+                        const [updatedSlot] = await tx
+                            .update(timeSlots)
+                            .set({ status: "booked" })
+                            .where(and(
+                                eq(timeSlots.id, dbSlot.id),
+                                eq(timeSlots.status, "available") // Double check availability
+                            ))
+                            .returning();
+
+                        if (!updatedSlot) {
+                            throw new TRPCError({
+                                code: "CONFLICT",
+                                message: `Slot ${date} ${from}-${to} was just booked by someone else`,
+                            });
+                        }
+
+                        slotsToBook.push({
+                            slotId: updatedSlot.id,
+                            date,
+                            from,
+                            to,
+                            fullAmount: updatedSlot.fullAmount,
+                            advanceAmount: updatedSlot.advanceAmount,
+                        });
+                    } else {
+                        // Slot doesn't exist - create from config
+                        const slotData = createSlotFromConfig(date, from, to, config.slots);
+
+                        const [newSlot] = await tx
+                            .insert(timeSlots)
+                            .values({
+                                ...slotData,
+                                status: "booked",
+                            })
+                            .onConflictDoUpdate({
+                                target: [timeSlots.date, timeSlots.from, timeSlots.to],
+                                set: { status: "booked" },
+                                where: eq(timeSlots.status, "available"),
+                            })
+                            .returning();
+
+                        if (!newSlot || newSlot.status !== "booked") {
+                            throw new TRPCError({
+                                code: "CONFLICT",
+                                message: `Slot ${date} ${from}-${to} was just booked by someone else`,
+                            });
+                        }
+
+                        slotsToBook.push({
+                            slotId: newSlot.id,
+                            date,
+                            from,
+                            to,
+                            fullAmount: slotData.fullAmount,
+                            advanceAmount: slotData.advanceAmount,
+                        });
+                    }
                 }
 
-                const totalAmount = slot.fullAmount;
-                const amountPaid = input.paymentType === "full" ? slot.fullAmount : slot.advanceAmount;
-                const status: "advancePaid" | "fullPaid" = input.paymentType === "full" ? "fullPaid" : "advancePaid";
+                // Generate 4-digit verification code
+                const verificationCode = Math.floor(1000 + Math.random() * 9000).toString();
 
-                return {
-                    phoneNumber: input.number,
-                    timeSlotId,
-                    totalAmount,
-                    amountPaid,
-                    status,
-                    verificationCode,
-                    bookingType: input.bookingType,
-                    couponId: input.couponId, // Add coupon ID
-                };
-            });
+                // Create bookings
+                const bookingInserts = slotsToBook.map(slot => {
+                    const totalAmount = slot.fullAmount;
+                    const amountPaid = input.paymentType === "full" ? slot.fullAmount : slot.advanceAmount;
+                    const status: "advancePaid" | "fullPaid" = input.paymentType === "full" ? "fullPaid" : "advancePaid";
 
-            const result = await db
-                .insert(bookings)
-                .values(bookingInserts)
-                .returning();
+                    return {
+                        phoneNumber: input.number,
+                        timeSlotId: slot.slotId,
+                        totalAmount,
+                        amountPaid,
+                        status,
+                        verificationCode,
+                        bookingType: input.bookingType,
+                        couponId: input.couponId,
+                    };
+                });
 
-            // Update time slots to booked
-            await db
-                .update(timeSlots)
-                .set({ status: "booked" })
-                .where(inArray(timeSlots.id, input.timeSlotIds));
+                const result = await tx
+                    .insert(bookings)
+                    .values(bookingInserts)
+                    .returning();
 
-            // Return bookings with time slot info
-            const bookingsWithSlots = await db
-                .select({
-                    id: bookings.id,
-                    phoneNumber: bookings.phoneNumber,
-                    timeSlotId: bookings.timeSlotId,
-                    status: bookings.status,
-                    amountPaid: bookings.amountPaid,
-                    totalAmount: bookings.totalAmount,
-                    verificationCode: bookings.verificationCode,
-                    bookingType: bookings.bookingType,
-                    createdAt: bookings.createdAt,
-                    timeSlot: {
-                        id: timeSlots.id,
-                        from: timeSlots.from,
-                        to: timeSlots.to,
-                        date: timeSlots.date,
-                    },
-                })
-                .from(bookings)
-                .leftJoin(timeSlots, eq(bookings.timeSlotId, timeSlots.id))
-                .where(inArray(bookings.id, result.map(b => b.id)));
+                // Return bookings with time slot info
+                const bookingsWithSlots = await tx
+                    .select({
+                        id: bookings.id,
+                        phoneNumber: bookings.phoneNumber,
+                        timeSlotId: bookings.timeSlotId,
+                        status: bookings.status,
+                        amountPaid: bookings.amountPaid,
+                        totalAmount: bookings.totalAmount,
+                        verificationCode: bookings.verificationCode,
+                        bookingType: bookings.bookingType,
+                        createdAt: bookings.createdAt,
+                        timeSlot: {
+                            id: timeSlots.id,
+                            from: timeSlots.from,
+                            to: timeSlots.to,
+                            date: timeSlots.date,
+                        },
+                    })
+                    .from(bookings)
+                    .innerJoin(timeSlots, eq(bookings.timeSlotId, timeSlots.id))
+                    .where(inArray(bookings.id, result.map(b => b.id)));
 
-            // Send confirmation email if customer has an email
-            if (customer[0].email) {
-                try {
-                    // Use first booking for email details
+                // Send confirmation email if customer has an email (async, don't block transaction)
+                if (customer[0].email) {
                     const firstBooking = bookingsWithSlots[0];
                     if (firstBooking) {
-                        await sendBookingConfirmation(customer[0].email, {
+                        sendBookingConfirmation(customer[0].email, {
                             customerName: customer[0].name ?? "Customer",
                             bookingIds: result.map(b => b.id.toString()),
                             timeSlots: bookingsWithSlots.map(b => ({
@@ -133,15 +232,12 @@ export const bookingRouter = createTRPCRouter({
                             amountPaid: firstBooking.amountPaid,
                             paymentStatus: input.paymentType === "full" ? "Full Payment" : "Advance Payment",
                             verificationCode: verificationCode,
-                        });
+                        }).catch(err => console.error("Failed to send email:", err));
                     }
-                } catch (emailError) {
-                    // Log email error but don't fail the booking
-                    console.error("Failed to send booking confirmation email:", emailError);
                 }
-            }
 
-            return bookingsWithSlots;
+                return bookingsWithSlots;
+            });
         }),
 
     // Get bookings by phone number
@@ -186,63 +282,121 @@ export const bookingRouter = createTRPCRouter({
             z.object({
                 bookingId: z.string().uuid("Invalid booking ID"),
                 phoneNumber: z.string().min(1, "Phone number is required"),
-                newTimeSlotId: z.number().int().positive("Invalid time slot ID"),
+                newSlot: z.object({
+                    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be YYYY-MM-DD"),
+                    from: z.string().regex(/^\d{2}:\d{2}:\d{2}$/, "Time must be HH:mm:ss"),
+                    to: z.string().regex(/^\d{2}:\d{2}:\d{2}$/, "Time must be HH:mm:ss"),
+                }),
             })
         )
         .mutation(async ({ input }) => {
-            // Check if booking exists and belongs to the phone number
-            const booking = await db
-                .select()
-                .from(bookings)
-                .where(
-                    and(
-                        eq(bookings.id, input.bookingId),
-                        eq(bookings.phoneNumber, input.phoneNumber)
-                    )
-                );
+            // Step 1: Check if booking exists and belongs to the phone number
+            const booking = await db.query.bookings.findFirst({
+                where: and(
+                    eq(bookings.id, input.bookingId),
+                    eq(bookings.phoneNumber, input.phoneNumber)
+                ),
+            });
 
-            if (!booking[0]) {
-                throw new Error("Booking not found or does not belong to this phone number");
+            if (!booking) {
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: "Booking not found or does not belong to this phone number",
+                });
             }
 
-            // Check if the new time slot is available
-            const newSlot = await db
-                .select()
-                .from(timeSlots)
-                .where(
-                    and(
-                        eq(timeSlots.id, input.newTimeSlotId),
-                        eq(timeSlots.status, "available")
-                    )
-                );
-
-            if (!newSlot[0]) {
-                throw new Error("Selected time slot is not available");
+            // Step 2: Validate new slot is not in the past
+            if (isPastTime(input.newSlot.date, input.newSlot.from)) {
+                throw new TRPCError({
+                    code: "BAD_REQUEST",
+                    message: "Cannot reschedule to a past time",
+                });
             }
 
-            // Get the old time slot ID
-            const oldTimeSlotId = booking[0].timeSlotId;
+            // Step 3: Fetch config for validation and pricing
+            const config = await db.query.configTable.findFirst();
+            if (!config?.slots) {
+                throw new TRPCError({
+                    code: "INTERNAL_SERVER_ERROR",
+                    message: "Slot configuration not found",
+                });
+            }
 
-            // Update the booking to the new time slot
+            // Step 4: Validate against config
+            const isValid = validateSlotAgainstConfig(
+                input.newSlot.date,
+                input.newSlot.from,
+                input.newSlot.to,
+                config.slots
+            );
+
+            if (!isValid) {
+                throw new TRPCError({
+                    code: "BAD_REQUEST",
+                    message: "Selected time slot is not valid according to configuration",
+                });
+            }
+
+            // Step 5: Check if the new time slot is already booked in DB
+            const existingSlot = await db.query.timeSlots.findFirst({
+                where: and(
+                    eq(timeSlots.date, input.newSlot.date),
+                    eq(timeSlots.from, input.newSlot.from),
+                    eq(timeSlots.to, input.newSlot.to)
+                ),
+            });
+
+            if (existingSlot && existingSlot.status !== "available") {
+                throw new TRPCError({
+                    code: "CONFLICT",
+                    message: "Selected time slot is already booked or unavailable",
+                });
+            }
+
+            // Step 6: Create or update the new slot in DB
+            const slotToUse = createSlotFromConfig(
+                input.newSlot.date,
+                input.newSlot.from,
+                input.newSlot.to,
+                config.slots
+            );
+
+            const [upsertedSlot] = await db
+                .insert(timeSlots)
+                .values({
+                    ...slotToUse,
+                    status: "booked",
+                })
+                .onConflictDoUpdate({
+                    target: [timeSlots.date, timeSlots.from, timeSlots.to],
+                    set: { status: "booked" },
+                })
+                .returning();
+
+            if (!upsertedSlot) {
+                throw new TRPCError({
+                    code: "INTERNAL_SERVER_ERROR",
+                    message: "Failed to create or update time slot",
+                });
+            }
+
+            // Step 7: Update the booking to the new time slot
+            const oldTimeSlotId = booking.timeSlotId;
             await db
                 .update(bookings)
                 .set({
-                    timeSlotId: input.newTimeSlotId,
+                    timeSlotId: upsertedSlot.id,
                     updatedAt: new Date(),
                 })
                 .where(eq(bookings.id, input.bookingId));
 
-            // Mark old slot as available
-            await db
-                .update(timeSlots)
-                .set({ status: "available" })
-                .where(eq(timeSlots.id, oldTimeSlotId));
-
-            // Mark new slot as booked
-            await db
-                .update(timeSlots)
-                .set({ status: "booked" })
-                .where(eq(timeSlots.id, input.newTimeSlotId));
+            // Step 8: Mark old slot as available
+            if (oldTimeSlotId) {
+                await db
+                    .update(timeSlots)
+                    .set({ status: "available" })
+                    .where(eq(timeSlots.id, oldTimeSlotId));
+            }
 
             // Return the updated booking with time slot info
             const updatedBooking = await db

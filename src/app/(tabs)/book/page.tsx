@@ -31,7 +31,7 @@ import { usePhone } from "~/lib/phone-context";
 import { api } from "~/trpc/react";
 
 type SlotView = {
-  id: number;
+  id?: number;
   date: string;
   from: string;
   to: string;
@@ -158,21 +158,21 @@ const fireSideCannons = () => {
   frame();
 };
 
-function useSlotBoard() {
-  const { data } = api.timeSlot.getAllAvailable.useQuery(
-    { limit: 24 * 1 },
-    { staleTime: 60_000 },
+function useSlotBoard(selectedDate: string) {
+  const { data } = api.timeSlot.getAllByDate.useQuery(
+    { date: selectedDate },
+    { enabled: !!selectedDate, staleTime: 60_000 },
   );
 
   return useMemo(() => {
     if (!data || data.length === 0) {
-      return fallbacks;
+      return [];
     }
 
     return data.map(
       (slot) =>
         ({
-          id: slot.id,
+          id: (slot as { id?: number }).id,
           date: slot.date,
           from: slot.from.slice(0, 5),
           to: slot.to.slice(0, 5),
@@ -218,14 +218,15 @@ type ConfirmationBooking = {
 
 export default function BookingPage() {
   const { language } = useLanguage();
-  const strings = useMemo(() => allTranslations.book[language], [language]);
-  const slots = useSlotBoard();
-  const { addBooking } = useBookings();
   const { phoneNumber: storedPhone, setPhoneNumber: setStoredPhone } =
     usePhone();
   const utils = api.useUtils();
-
-  const [selectedDate, setSelectedDate] = useState<string>("");
+  const strings = useMemo(() => allTranslations.book[language], [language]);
+  const [selectedDate, setSelectedDate] = useState<string>(() =>
+    format(new Date(), "yyyy-MM-dd"),
+  );
+  const slots = useSlotBoard(selectedDate);
+  const { addBooking } = useBookings();
   const [selectedSlots, setSelectedSlots] = useState<SlotView[]>([]);
   const [slotDrawerOpen, setSlotDrawerOpen] = useState(false);
   const [bookingType, setBookingType] = useState<Set<"cricket" | "football">>(
@@ -238,6 +239,12 @@ export default function BookingPage() {
   const [confirmation, setConfirmation] = useState<
     ConfirmationBooking[] | null
   >(null);
+  const primaryConfirmation = confirmation?.[0];
+  const confirmationTotalPaid = confirmation?.reduce(
+    (sum, b) => sum + b.amountPaid,
+    0,
+  );
+  const confirmationCardRef = useRef<HTMLDivElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [phoneDrawerOpen, setPhoneDrawerOpen] = useState(false);
   const [tempPhone, setTempPhone] = useState("");
@@ -475,7 +482,11 @@ export default function BookingPage() {
       setStoredPhone(normalizedNumber);
 
       // Step 2: Book the slots
-      const timeSlotIds = selectedSlots.map((slot) => slot.id);
+      const timeSlots = selectedSlots.map((slot) => ({
+        date: slot.date,
+        from: slot.from + ":00",
+        to: slot.to + ":00",
+      }));
       // Convert Set to string: if both selected, "cricket&football", else the single selection
       const bookingTypeStr =
         bookingType.size === 2
@@ -483,7 +494,7 @@ export default function BookingPage() {
           : Array.from(bookingType)[0]!;
       const bookingResult = await bookSlots.mutateAsync({
         number: normalizedNumber,
-        timeSlotIds,
+        timeSlots,
         paymentType: paymentOption,
         bookingType: bookingTypeStr,
         couponId: appliedCoupon?.couponId,
@@ -491,19 +502,24 @@ export default function BookingPage() {
 
       // Step 3: Create confirmation data
       const confirmationData: ConfirmationBooking[] = bookingResult.map(
-        (booking) => ({
-          id: booking.id,
-          date: booking.timeSlot?.date ?? selectedDate,
-          from: booking.timeSlot?.from?.slice(0, 5) ?? "",
-          to: booking.timeSlot?.to?.slice(0, 5) ?? "",
-          bookingType: booking.bookingType ?? bookingType,
-          paymentOption,
-          amountPaid: booking.amountPaid / 100, // Convert from paise to rupees
-          totalAmount: booking.totalAmount / 100,
-          verificationCode: booking.verificationCode ?? "",
-          bookingCode: `PP-${booking.id.slice(-6).toUpperCase()}`,
-          customer,
-        }),
+        (booking) => {
+          if (!booking.timeSlot) {
+            throw new Error("Booking successful but time slot data is missing");
+          }
+          return {
+            id: booking.id,
+            date: booking.timeSlot.date,
+            from: booking.timeSlot.from.slice(0, 5),
+            to: booking.timeSlot.to.slice(0, 5),
+            bookingType: booking.bookingType as any,
+            paymentOption,
+            amountPaid: booking.amountPaid / 100, // Convert from paise to rupees
+            totalAmount: booking.totalAmount / 100,
+            verificationCode: booking.verificationCode ?? "",
+            bookingCode: `PP-${booking.id.slice(-6).toUpperCase()}`,
+            customer,
+          };
+        },
       );
 
       // Also store in local bookings context for offline viewing
@@ -534,7 +550,7 @@ export default function BookingPage() {
       setSlotDrawerOpen(false);
 
       // Invalidate queries to refresh data
-      await utils.timeSlot.getAllAvailable.invalidate();
+      await utils.timeSlot.getAllByDate.invalidate({ date: selectedDate });
       await utils.booking.getByNumber.invalidate({ number: customer.number });
     } catch (error) {
       console.error("Booking failed:", error);

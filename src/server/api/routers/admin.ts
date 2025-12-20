@@ -18,6 +18,7 @@ import {
 import { generatePassword } from "~/lib/password-generator";
 import { sendAdminInvitationEmail } from "~/server/email";
 import { auth } from "~/server/better-auth";
+import { createSlotFromConfig, generateVirtualSlots } from "~/lib/slot-utils";
 
 const managerProcedure = protectedProcedure.use(async ({ ctx, next }) => {
     const manager = await db.query.managers.findFirst({
@@ -299,6 +300,165 @@ export const adminRouter = createTRPCRouter({
                 .returning();
 
             return updated;
+        }),
+
+    createSlot: managerProcedure
+        .input(
+            z.object({
+                date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+                from: z.string().regex(/^\d{2}:\d{2}:\d{2}$/),
+                to: z.string().regex(/^\d{2}:\d{2}:\d{2}$/),
+                fullAmount: z.number().optional(),
+                advanceAmount: z.number().optional(),
+                status: z.enum(["available", "unavailable", "booked"]),
+            }),
+        )
+        .mutation(async ({ input }) => {
+            // Check if slot already exists
+            const existing = await db.query.timeSlots.findFirst({
+                where: and(
+                    eq(timeSlots.date, input.date),
+                    eq(timeSlots.from, input.from),
+                    eq(timeSlots.to, input.to),
+                ),
+            });
+
+            if (existing) {
+                throw new TRPCError({
+                    code: "CONFLICT",
+                    message: "Slot already exists. Use updateSlot instead.",
+                });
+            }
+
+            // Get config for default amounts if not provided
+            const config = await db.query.configTable.findFirst();
+            if (!config?.slots) {
+                throw new TRPCError({
+                    code: "INTERNAL_SERVER_ERROR",
+                    message: "Config not found",
+                });
+            }
+
+            // Use createSlotFromConfig to get correct default amounts for that day
+            const slotTemplate = createSlotFromConfig(input.date, input.from, input.to, config.slots);
+
+            // Create slot with custom values
+            const [newSlot] = await db
+                .insert(timeSlots)
+                .values({
+                    date: input.date,
+                    from: input.from,
+                    to: input.to,
+                    fullAmount: input.fullAmount ?? slotTemplate.fullAmount,
+                    advanceAmount: input.advanceAmount ?? slotTemplate.advanceAmount,
+                    status: input.status,
+                })
+                .returning();
+
+            return newSlot;
+        }),
+
+    updateSlot: managerProcedure
+        .input(
+            z.object({
+                slotId: z.number(),
+                fullAmount: z.number().optional(),
+                advanceAmount: z.number().optional(),
+                status: z.enum(["available", "unavailable", "booked"]).optional(),
+            }),
+        )
+        .mutation(async ({ input }) => {
+            const { slotId, ...updates } = input;
+
+            // Verify slot exists
+            const slot = await db.query.timeSlots.findFirst({
+                where: eq(timeSlots.id, slotId),
+            });
+
+            if (!slot) {
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: "Slot not found",
+                });
+            }
+
+            // Update slot
+            const [updated] = await db
+                .update(timeSlots)
+                .set(updates)
+                .where(eq(timeSlots.id, slotId))
+                .returning();
+
+            return updated;
+        }),
+
+    deleteSlot: managerProcedure
+        .input(z.object({ slotId: z.number() }))
+        .mutation(async ({ input }) => {
+            const slot = await db.query.timeSlots.findFirst({
+                where: eq(timeSlots.id, input.slotId),
+            });
+
+            if (!slot) {
+                throw new TRPCError({
+                    code: "NOT_FOUND",
+                    message: "Slot not found",
+                });
+            }
+
+            // Check if slot has bookings
+            const hasBookings = await db.query.bookings.findFirst({
+                where: eq(bookings.timeSlotId, input.slotId),
+            });
+
+            if (hasBookings) {
+                throw new TRPCError({
+                    code: "CONFLICT",
+                    message: "Cannot delete slot with existing bookings",
+                });
+            }
+
+            // Delete slot
+            await db.delete(timeSlots).where(eq(timeSlots.id, input.slotId));
+
+            return { success: true, message: "Slot deleted. Virtual slot will now be used." };
+        }),
+
+    bulkCreateSlots: managerProcedure
+        .input(
+            z.object({
+                dates: z.array(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)),
+                status: z.enum(["available", "unavailable"]).default("unavailable"),
+            }),
+        )
+        .mutation(async ({ input }) => {
+            const config = await db.query.configTable.findFirst();
+            if (!config?.slots) {
+                throw new TRPCError({
+                    code: "INTERNAL_SERVER_ERROR",
+                    message: "Slot configuration not found",
+                });
+            }
+
+            const virtualSlots = generateVirtualSlots(input.dates, config.slots);
+
+            const inserts = virtualSlots.map(slot => ({
+                ...slot,
+                status: input.status,
+            }));
+
+            if (inserts.length === 0) return { success: true, count: 0 };
+
+            const result = await db
+                .insert(timeSlots)
+                .values(inserts)
+                .onConflictDoUpdate({
+                    target: [timeSlots.date, timeSlots.from, timeSlots.to],
+                    set: { status: input.status },
+                })
+                .returning();
+
+            return { success: true, count: result.length };
         }),
 
     getBookingsByDate: managerProcedure

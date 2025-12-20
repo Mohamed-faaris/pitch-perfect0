@@ -3,10 +3,17 @@ import { z } from "zod";
 import {
     createTRPCRouter,
     publicProcedure,
+    managerProcedure,
 } from "~/server/api/trpc";
 import { db } from "~/server/db";
 import { timeSlots } from "~/server/db/schema";
-import { eq, and, gte, gt, or } from "drizzle-orm";
+import { eq, and, gte, gt, or, inArray } from "drizzle-orm";
+import {
+    generateVirtualSlots,
+    filterAvoidSlots,
+    mergeWithActualSlots,
+    isPastTime,
+} from "~/lib/slot-utils";
 
 export const timeSlotRouter = createTRPCRouter({
     // 1. Get all available slots across all dates (current and forward)
@@ -14,43 +21,62 @@ export const timeSlotRouter = createTRPCRouter({
     getAllAvailable: publicProcedure
         .input(
             z.object({
-                limit: z.number().min(1).max(24 * 31).default(24 * 5),
+                days: z.number().min(1).max(31).default(7),
                 date: z.string().optional().default(() =>
                     new Date().toISOString().split("T")[0]!
-                ),
-                time: z.string().optional().default(() =>
-                    new Date().toTimeString().split(" ")[0]!
                 ),
             })
         )
         .query(async ({ input }) => {
-            const userDate = input.date;
-            const userTime = input.time;
-            const today = new Date().toISOString().split("T")[0];
+            // Step 1: Fetch config
+            const config = await db.query.configTable.findFirst();
+            if (!config?.slots) {
+                throw new Error("Slot configuration not found");
+            }
 
-            const result = await db
-                .select()
-                .from(timeSlots)
-                .where(
-                    and(
-                        eq(timeSlots.status, "available"),
+            // Step 2: Generate dates for the next N days
+            const dates: string[] = [];
+            const startDate = new Date(input.date);
+            for (let i = 0; i < input.days; i++) {
+                const d = new Date(startDate);
+                d.setDate(startDate.getDate() + i);
+                dates.push(d.toISOString().split("T")[0]!);
+            }
 
-                        or(
-                            // Case 1: future dates
-                            gt(timeSlots.date, userDate),
+            // Step 3: Generate virtual slots for all dates
+            let virtualSlots = generateVirtualSlots(dates, config.slots);
 
-                            // Case 2: same date → filter by time
-                            and(
-                                eq(timeSlots.date, userDate),
-                                gte(timeSlots.from, userTime)
-                            )
-                        )
-                    )
-                )
-                .orderBy(timeSlots.date, timeSlots.from)
-                .limit(input.limit);
+            // Step 4: Filter by avoidSlots
+            if (config.slots.avoidSlots && config.slots.avoidSlots.length > 0) {
+                virtualSlots = filterAvoidSlots(
+                    virtualSlots,
+                    config.slots.avoidSlots,
+                );
+            }
 
-            return result;
+            // Step 5: Query DB for actual slots in this range
+            const dbSlots = await db.query.timeSlots.findMany({
+                where: and(
+                    gte(timeSlots.date, dates[0]!),
+                    inArray(timeSlots.date, dates)
+                ),
+                orderBy: (timeSlot, { asc }) => [asc(timeSlot.date), asc(timeSlot.from)],
+            });
+
+            // Step 6: Merge virtual + actual
+            const mergedSlots = mergeWithActualSlots(virtualSlots as any[], dbSlots as any[]);
+
+            // Step 7: Filter out past times and only return available ones
+            const now = new Date();
+            const today = now.toISOString().split("T")[0]!;
+            const currentTime = now.toTimeString().split(" ")[0]!;
+
+            return mergedSlots.filter(slot => {
+                if (slot.status !== "available") return false;
+                if (slot.date < today) return false;
+                if (slot.date === today && slot.from <= currentTime) return false;
+                return true;
+            });
         }),
 
     // 2. Get all slots for a specific date (current and forward times only)
@@ -62,26 +88,98 @@ export const timeSlotRouter = createTRPCRouter({
             })
         )
         .query(async ({ input }) => {
-            const now = new Date();
-            const today = now.toISOString().split("T")[0]!;
-            const currentTime = now.toTimeString().split(" ")[0]!; // HH:MM:SS format
-
-            let query = db
-                .select()
-                .from(timeSlots)
-                .where(
-                    eq(timeSlots.date, input.date)
-                )
-                .$dynamic();
-
-            // If the requested date is today, only return slots with times >= current time
-            if (input.date === today) {
-                query = query.where(gte(timeSlots.from, currentTime));
+            // Step 1: Fetch config
+            const config = await db.query.configTable.findFirst();
+            if (!config?.slots) {
+                throw new Error("Slot configuration not found");
             }
 
-            const result = await query.orderBy(timeSlots.from);
+            // Step 2: Generate virtual slots from config
+            let virtualSlots = generateVirtualSlots([input.date], config.slots);
 
-            return result;
+            // Step 3: Filter by avoidSlots
+            if (config.slots.avoidSlots && config.slots.avoidSlots.length > 0) {
+                virtualSlots = filterAvoidSlots(
+                    virtualSlots,
+                    config.slots.avoidSlots,
+                );
+            }
+
+            // Step 4: Query DB for actual slots
+            const dbSlots = await db.query.timeSlots.findMany({
+                where: eq(timeSlots.date, input.date),
+                orderBy: (timeSlot, { asc }) => [asc(timeSlot.from)],
+            });
+
+            // Step 5: Merge virtual + actual (DB takes priority)
+            const mergedSlots = mergeWithActualSlots(virtualSlots as any[], dbSlots as any[]);
+
+            // Step 6: Filter out past times if querying current date
+            const now = new Date();
+            const today = now.toISOString().split("T")[0]!;
+
+            const filteredSlots = mergedSlots.filter((slot) => {
+                if (slot.date === today) {
+                    return !isPastTime(slot.date, slot.from);
+                }
+                return true;
+            });
+
+            return filteredSlots;
+        }),
+
+    getSlotConfig: publicProcedure.query(async () => {
+        const config = await db.query.configTable.findFirst();
+        return config?.slots;
+    }),
+
+    upsert: managerProcedure
+        .input(
+            z.object({
+                date: z.string(),
+                from: z.string(),
+                to: z.string(),
+                status: z.enum(["available", "booked", "unavailable", "bookingInProgress"]),
+                fullAmount: z.number().optional(),
+                advanceAmount: z.number().optional(),
+            })
+        )
+        .mutation(async ({ ctx, input }) => {
+            return await ctx.db
+                .insert(timeSlots)
+                .values({
+                    ...input,
+                    updatedBy: ctx.manager.id,
+                })
+                .onConflictDoUpdate({
+                    target: [timeSlots.from, timeSlots.to, timeSlots.date],
+                    set: {
+                        status: input.status,
+                        fullAmount: input.fullAmount,
+                        advanceAmount: input.advanceAmount,
+                        updatedBy: ctx.manager.id,
+                    },
+                });
+        }),
+
+    deleteOverride: managerProcedure
+        .input(
+            z.object({
+                date: z.string(),
+                from: z.string(),
+                to: z.string(),
+            })
+        )
+        .mutation(async ({ ctx, input }) => {
+            return await ctx.db
+                .delete(timeSlots)
+                .where(
+                    and(
+                        eq(timeSlots.date, input.date),
+                        eq(timeSlots.from, input.from),
+                        eq(timeSlots.to, input.to)
+                    )
+                );
         }),
 
 });

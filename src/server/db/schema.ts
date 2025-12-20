@@ -21,10 +21,33 @@ export interface AvoidSlot {
   date: string;
 }
 
+export type DayOfWeek =
+  | "monday"
+  | "tuesday"
+  | "wednesday"
+  | "thursday"
+  | "friday"
+  | "saturday"
+  | "sunday";
+
+export interface DayConfig {
+  AvailableSlots: Array<{
+    from: string;
+    to: string;
+    status: "available" | "unavailable";
+    fullAmount?: number;
+    advanceAmount?: number;
+  }>;
+  fullAmount?: number;
+  advanceAmount?: number;
+}
+
 export interface SlotsConfigType {
-  AvailableSlots: SlotConfig[];
-  avoidSlots: AvoidSlot[];
+  default: DayConfig;
+  weeklyOverrides?: Partial<Record<DayOfWeek, DayConfig>>;
+  avoidSlots?: AvoidSlot[];
   daysInAdvanceToCreateSlots: number;
+  daysInAdvanceToCouldBook: number;
 }
 
 /**
@@ -78,6 +101,7 @@ export const timeSlots = createTable(
   }),
   (t) => [
     uniqueIndex("time_slot_from_to_date_unique_idx").on(t.from, t.to, t.date),
+    index("time_slot_date_status_idx").on(t.date, t.status),
   ]
 );
 
@@ -439,6 +463,33 @@ export const couponUsesRelations = relations(couponUses, ({ one }) => ({
 }));
 
 //config table
+export type DayOfWeek =
+  | "monday"
+  | "tuesday"
+  | "wednesday"
+  | "thursday"
+  | "friday"
+  | "saturday"
+  | "sunday";
+
+export interface DayConfig {
+  AvailableSlots: Array<{
+    from: string;
+    to: string;
+    status: "available" | "unavailable";
+    fullAmount?: number;
+    advanceAmount?: number;
+  }>;
+  fullAmount?: number;
+  advanceAmount?: number;
+}
+
+export interface SlotsConfigType {
+  default: DayConfig;
+  weeklyOverrides?: Partial<Record<DayOfWeek, DayConfig>>;
+  daysInAdvanceToCreateSlots: number;
+}
+
 export const configTable = createTable("config", (d) => ({
   id: d.integer().primaryKey().generatedByDefaultAsIdentity(),
   updatedBy: d.integer().references(() => managers.id),
@@ -453,16 +504,21 @@ export const configTable = createTable("config", (d) => ({
 
   fullPaymentMode: d.boolean().notNull().default(false),
 
-  slots: d.jsonb().notNull().$defaultFn(() => ({
-    AvailableSlots: Array.from({ length: 24 }, (_, i) => ({
-      from: `${String(i).padStart(2, "0")}:00:00`,
-      to: `${String(i + 1).padStart(2, "0")}:00:00`,
-      status: "available" as const,
+  slots: d.jsonb().notNull().$type<SlotsConfigType>().$defaultFn(() => ({
+    default: {
+      AvailableSlots: Array.from({ length: 24 }, (_, i) => ({
+        from: `${String(i).padStart(2, "0")}:00:00`,
+        to: `${String(i + 1).padStart(2, "0")}:00:00`,
+        status: "available" as const,
+        fullAmount: 800_00,
+        advanceAmount: 100_00,
+      })),
       fullAmount: 800_00,
       advanceAmount: 100_00,
-    })),
-    avoidSlots: [{}],//structure: {from: "HH:MM:SS", to: "HH:MM:SS",date: "YYYY-MM-DD"} sorted by date
-    daysInAdvanceToCreateSlots: 3// number of days in advance to create slots
+    },
+    weeklyOverrides: {},
+    daysInAdvanceToCreateSlots: 30,
+    daysInAdvanceToCouldBook: 3
   })),
 
   bookingBufferMinutes: d.integer().notNull().default(3),// minutes before payment deadline to open slot again

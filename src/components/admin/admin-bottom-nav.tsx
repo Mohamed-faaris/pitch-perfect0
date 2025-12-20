@@ -9,6 +9,7 @@ import {
   Users,
   Settings2,
   ShieldCheck,
+  Clock,
 } from "lucide-react";
 
 import { cn } from "~/lib/utils";
@@ -69,11 +70,14 @@ export function AdminBottomNav({ role }: { role: ManagerRole }) {
   );
 
   return (
-    <nav className="sticky bottom-0 left-0 right-0 border-t border-border/60 bg-background/90 px-2 py-3 backdrop-blur">
+    <nav className="border-border/60 bg-background/90 sticky right-0 bottom-0 left-0 border-t px-2 py-3 backdrop-blur">
       <div className="flex items-center gap-1 text-xs">
         {filteredItems.map((item) => {
           const Icon = item.icon;
-          const isActive = pathname?.startsWith(item.href) ?? false;
+          const isActive =
+            item.href === "/admin/config"
+              ? pathname === "/admin/config"
+              : (pathname?.startsWith(item.href) ?? false);
           return (
             <button
               key={item.href}

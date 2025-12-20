@@ -1,6 +1,11 @@
 "use client";
 
-import { Settings2, Image as ImageIcon } from "lucide-react";
+import {
+  Settings2,
+  Image as ImageIcon,
+  Clock,
+  ChevronRight,
+} from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
@@ -177,6 +182,22 @@ export default function ConfigPage() {
       </header>
 
       <div className="flex flex-col gap-3">
+        {/* Daily Slot Overrides */}
+        <Link href="/admin/config/slots">
+          <Card className="border-border/60 bg-card/60 hover:bg-card/80 flex flex-row items-center justify-between rounded-3xl px-4 py-3 transition-colors">
+            <div className="flex items-center gap-3">
+              <Clock className="text-primary h-5 w-5" />
+              <div>
+                <p className="text-sm font-semibold">Daily Slot Overrides</p>
+                <p className="text-muted-foreground text-xs">
+                  Override specific slots for a single day
+                </p>
+              </div>
+            </div>
+            <ChevronRight className="text-muted-foreground h-5 w-5" />
+          </Card>
+        </Link>
+
         {/* Maintenance Mode Toggle */}
         <Card className="border-border/60 bg-card/60 flex flex-row items-center justify-between rounded-3xl px-4 py-3">
           <div>

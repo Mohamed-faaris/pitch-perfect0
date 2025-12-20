@@ -42,7 +42,7 @@ type BookingFromApi = {
   amountPaid: number;
   totalAmount: number;
   verificationCode: string | null;
-  bookingType: "cricket" | "football" | null;
+  bookingType: "cricket" | "football" | "cricket&football" | null;
   couponId: string | null;
   createdAt: Date;
   updatedAt: Date | null;
@@ -358,7 +358,11 @@ export default function ViewPage() {
   }, [activeTicket, background]);
 
   const [rescheduleDate, setRescheduleDate] = useState<string>("");
-  const [rescheduleSlotId, setRescheduleSlotId] = useState<string>("");
+  const [rescheduleSlot, setRescheduleSlot] = useState<{
+    date: string;
+    from: string;
+    to: string;
+  } | null>(null);
 
   // Process available slots grouped by date
   const availableSlotsByDate = useMemo(() => {
@@ -369,17 +373,13 @@ export default function ViewPage() {
         const date = slot.date;
         acc[date] ??= [];
         acc[date].push({
-          id: slot.id,
           date: slot.date,
           from: slot.from,
           to: slot.to,
         });
         return acc;
       },
-      {} as Record<
-        string,
-        Array<{ id: number; date: string; from: string; to: string }>
-      >,
+      {} as Record<string, Array<{ date: string; from: string; to: string }>>,
     );
 
     return Object.entries(grouped).map(([date, slots]) => ({
@@ -389,16 +389,14 @@ export default function ViewPage() {
   }, [availableSlots]);
 
   const selectedSlot = useMemo(() => {
-    if (!rescheduleDate || !rescheduleSlotId) return undefined;
-    return availableSlotsByDate
-      .find((entry) => entry.date === rescheduleDate)
-      ?.slots.find((slot) => slot.id === parseInt(rescheduleSlotId));
-  }, [rescheduleDate, rescheduleSlotId, availableSlotsByDate]);
+    if (!rescheduleDate || !rescheduleSlot) return undefined;
+    return rescheduleSlot;
+  }, [rescheduleSlot]);
 
   const resetRescheduleState = () => {
     setRescheduleTarget(null);
     setRescheduleDate("");
-    setRescheduleSlotId("");
+    setRescheduleSlot(null);
   };
 
   const handleRescheduleConfirm = async () => {
@@ -408,7 +406,11 @@ export default function ViewPage() {
       await rescheduleMutation.mutateAsync({
         bookingId: rescheduleTarget.id,
         phoneNumber: storedPhone,
-        newTimeSlotId: selectedSlot.id,
+        newSlot: {
+          date: selectedSlot.date,
+          from: selectedSlot.from,
+          to: selectedSlot.to,
+        },
       });
       resetRescheduleState();
       // Invalidate the getByNumber query to refetch bookings
@@ -703,7 +705,7 @@ export default function ViewPage() {
                         key={entry.date}
                         onClick={() => {
                           setRescheduleDate(entry.date);
-                          setRescheduleSlotId("");
+                          setRescheduleSlot(null);
                         }}
                         className={cn(
                           "flex min-w-24 flex-col items-center rounded-2xl border px-4 py-3 text-sm transition",
@@ -728,11 +730,14 @@ export default function ViewPage() {
                       (entry) => entry.date === rescheduleDate,
                     )?.slots ?? []
                   ).map((slot) => {
-                    const isChosen = rescheduleSlotId === slot.id.toString();
+                    const isChosen =
+                      rescheduleSlot?.date === slot.date &&
+                      rescheduleSlot?.from === slot.from &&
+                      rescheduleSlot?.to === slot.to;
                     return (
                       <motion.button
-                        key={slot.id}
-                        onClick={() => setRescheduleSlotId(slot.id.toString())}
+                        key={`${slot.date}-${slot.from}-${slot.to}`}
+                        onClick={() => setRescheduleSlot(slot)}
                         className={cn(
                           "flex flex-col rounded-2xl border px-3 py-3 text-left text-sm transition",
                           isChosen

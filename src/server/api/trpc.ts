@@ -132,3 +132,36 @@ export const protectedProcedure = t.procedure
       },
     });
   });
+
+/**
+ * Manager procedure
+ *
+ * Verifies the user is a manager (admin or superAdmin).
+ */
+export const managerProcedure = protectedProcedure.use(async ({ ctx, next }) => {
+  const manager = await ctx.db.query.managers.findFirst({
+    where: (managers, { eq }) => eq(managers.authId, ctx.session.user.id),
+  });
+
+  if (!manager || manager.role === "staff") {
+    throw new TRPCError({ code: "FORBIDDEN", message: "Only managers can perform this action" });
+  }
+
+  return next({
+    ctx: {
+      ...ctx,
+      manager,
+    },
+  });
+});
+
+/**
+ * Super Admin procedure
+ */
+export const superAdminProcedure = managerProcedure.use(async ({ ctx, next }) => {
+  if (ctx.manager.role !== "superAdmin") {
+    throw new TRPCError({ code: "FORBIDDEN", message: "Only super admins can perform this action" });
+  }
+
+  return next();
+});

@@ -574,4 +574,15 @@ weekly config in `configTable.slots` field:
   }
 }
 ```
+admin panel
+add option to to edit weekly config 
+and set default config
+use weekly defalt config as single json
+just add day selector horizontal in already existing drawer thats all
+
+
+user side
+use new api to fetch slots
+show slots as per new api response
+
 

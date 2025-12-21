@@ -137,8 +137,8 @@ export function LandingPageClient({
             <Card className="border-border/60 overflow-hidden rounded-2xl p-0">
               <div className="relative h-36 w-full">
                 <Image
-                  src="/og-apurkotai-turf.jpg"
-                  alt="Pitch Perfect Turf"
+                  src="/highlights/highlight-aerial.jpg"
+                  alt="Pitch Perfect Turf Aerial View"
                   fill
                   priority
                   className="object-cover"
@@ -402,26 +402,25 @@ export function LandingPageClient({
                 ))}
               </div>
             ) : (
-              <Card className="border-border/60 rounded-2xl p-6">
-                <p className="text-muted-foreground text-sm">
-                  {galleryStrings.noItems}
-                </p>
-                <div className="mt-3">
-                  <Button
-                    asChild
-                    variant="outline"
-                    className="w-full rounded-full"
-                  >
-                    <Link
-                      href="/gallery"
-                      className="flex items-center justify-center gap-2"
-                    >
-                      <GalleryHorizontal className="h-4 w-4" />
-                      {"Open gallery"}
-                    </Link>
-                  </Button>
-                </div>
-              </Card>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  "/highlights/highlight-turf.jpg",
+                  "/highlights/highlight-play.jpg",
+                  "/highlights/highlight-night.jpg",
+                  "/highlights/highlight-aerial.jpg",
+                ].map((src, idx) => (
+                  <Card key={src} className="overflow-hidden rounded-2xl p-0">
+                    <div className="relative aspect-video w-full">
+                      <Image
+                        src={src}
+                        alt={`Highlight ${idx + 1}`}
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                  </Card>
+                ))}
+              </div>
             )}
           </section>
 

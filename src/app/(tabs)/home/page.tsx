@@ -22,19 +22,19 @@ export default function HomePage() {
   const highlights = useMemo(
     () => [
       {
-        src: "https://picsum.photos/seed/turf-1/400/300",
+        src: "/highlights/highlight-turf.jpg",
         label: strings.highlight1,
       },
       {
-        src: "https://picsum.photos/seed/turf-2/400/300",
+        src: "/highlights/highlight-play.jpg",
         label: strings.highlight2,
       },
       {
-        src: "https://picsum.photos/seed/turf-3/400/300",
+        src: "/highlights/highlight-night.jpg",
         label: strings.highlight3,
       },
       {
-        src: "https://picsum.photos/seed/turf-4/400/300",
+        src: "/highlights/highlight-aerial.jpg",
         label: strings.highlight4,
       },
     ],
@@ -42,15 +42,21 @@ export default function HomePage() {
   );
 
   const slides = useMemo(() => {
-    return (
-      bannerItems
-        ?.filter((item) => item.mediaType === "image")
+    if (bannerItems && bannerItems.length > 0) {
+      return bannerItems
+        .filter((item) => item.mediaType === "image")
         .map((item) => ({
           id: String(item.id),
           src: item.cloudinaryUrl,
           alt: item.altText ?? item.title ?? "Banner",
-        })) ?? []
-    );
+        }));
+    }
+    // Fallback to highlights if no banner items
+    return [
+      { id: "h1", src: "/highlights/highlight-aerial.jpg", alt: "Aerial View" },
+      { id: "h2", src: "/highlights/highlight-night.jpg", alt: "Night Match" },
+      { id: "h3", src: "/highlights/highlight-play.jpg", alt: "Day Match" },
+    ];
   }, [bannerItems]);
   const quickActions = [
     {

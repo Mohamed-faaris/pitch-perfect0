@@ -1,13 +1,15 @@
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Home | Pitch Perfect Turf",
+  title: "Home | Pitch Perfect Turf Aruppukottai",
   description:
-    "Welcome to Pitch Perfect Turf, Aruppukottai's premier sports destination for football and cricket enthusiasts.",
+    "Experience the best football and cricket at Pitch Perfect Turf, Aruppukottai. Professional 5-a-side turf with premium floodlights and facilities.",
   keywords: [
     "Pitch Perfect Home",
     "best turf Aruppukottai",
     "sports facility Aruppukottai",
+    "football ground Aruppukottai",
+    "cricket box Aruppukottai",
   ],
 };
 

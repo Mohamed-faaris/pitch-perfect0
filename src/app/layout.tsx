@@ -16,25 +16,27 @@ import { Toaster } from "sonner";
 // Use runtime-configured base URL when available, otherwise fall back.
 const siteUrl = env.NEXT_PUBLIC_BASE_URL;
 const description =
-  "Pitch Perfect Turf - The best football and cricket turf in Aruppukottai. Book your slots online for a premium playing experience.";
+  "Pitch Perfect Turf - Aruppukottai's premier 5-a-side football and box cricket destination. Book your slots online for a premium playing experience with professional turf and floodlights.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "Pitch Perfect Turf | Aruppukottai Turf Booking",
+    default: "Pitch Perfect Turf | Aruppukottai's Best Football & Cricket Turf",
     template: "%s • Pitch Perfect Turf",
   },
   description,
   keywords: [
     "Pitch Perfect Turf",
-    "arupokotai turf",
     "Aruppukottai turf",
     "turf booking Aruppukottai",
     "football turf Aruppukottai",
     "cricket turf Aruppukottai",
+    "box cricket Aruppukottai",
+    "5-a-side football Aruppukottai",
     "sports ground Aruppukottai",
+    "turf near me",
+    "online turf booking",
     "Pitch Perfect",
-    "turf booking",
     "football turf",
     "cricket practice",
   ],
@@ -58,10 +60,10 @@ export const metadata: Metadata = {
     locale: "en_US",
     images: [
       {
-        url: "/og-apurkotai-turf.jpg",
+        url: "/highlights/highlight-aerial.jpg",
         width: 1200,
         height: 630,
-        alt: "Apurkotai Turf — Pitch Perfect",
+        alt: "Pitch Perfect Turf Aruppukottai — Aerial View",
       },
     ],
   },
@@ -70,7 +72,7 @@ export const metadata: Metadata = {
     title: "Pitch Perfect Turf",
     description,
     // Prefer absolute URL so validators reliably pick up the image
-    images: [`${siteUrl.replace(/\/$/, "")}/og-apurkotai-turf.jpg`],
+    images: [`${siteUrl.replace(/\/$/, "")}/highlights/highlight-aerial.jpg`],
     // Optional: set a creator/site identifier. Replace with your Twitter handle if available.
     creator: "Pitch Perfect",
     site: "@pitchperfect",

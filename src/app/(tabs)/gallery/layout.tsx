@@ -1,14 +1,16 @@
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Gallery | Pitch Perfect Turf",
+  title: "Gallery | Photos & Videos of Pitch Perfect Turf",
   description:
-    "View our premium turf facilities, match highlights, and community events at Pitch Perfect Turf, Aruppukottai.",
+    "Explore our premium football and cricket turf in Aruppukottai. View photos of our professional facilities, night matches, and drone shots.",
   keywords: [
     "turf gallery",
     "Pitch Perfect photos",
     "Aruppukottai sports ground images",
     "football turf photos",
+    "cricket turf images",
+    "Aruppukottai turf videos",
   ],
 };
 

@@ -1,14 +1,16 @@
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Contact Us | Pitch Perfect Turf",
+  title: "Contact Us | Book Your Slot at Pitch Perfect Turf",
   description:
-    "Get in touch with Pitch Perfect Turf in Aruppukottai. Find our location, contact number, and social media links.",
+    "Contact Pitch Perfect Turf in Aruppukottai for bookings and inquiries. Find our location on Google Maps, WhatsApp us, or call for details.",
   keywords: [
     "contact Pitch Perfect",
     "turf location Aruppukottai",
     "Pitch Perfect phone number",
     "turf directions",
+    "book turf Aruppukottai",
+    "Pitch Perfect WhatsApp",
   ],
 };
 

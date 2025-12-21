@@ -106,7 +106,9 @@ export function LandingPageClient({
                 Pitch Perfect Turf
               </h1>
               <p className="text-muted-foreground text-sm">
-                {"Book your turf slot, view tickets, explore the gallery, and get directions—all in one place."}
+                {
+                  "Book your turf slot, view tickets, explore the gallery, and get directions—all in one place."
+                }
               </p>
             </div>
 
@@ -233,7 +235,9 @@ export function LandingPageClient({
                       {"Address"}
                     </p>
                     <p className="text-muted-foreground mt-1 text-sm">
-                      {"12/4A, Pitch Perfect Turf, Aruppukottai Main Road, Tamil Nadu."}
+                      {
+                        "12/4A, Pitch Perfect Turf, Aruppukottai Main Road, Tamil Nadu."
+                      }
                     </p>
                     <div className="mt-3 flex flex-wrap gap-2">
                       <Button
@@ -320,7 +324,7 @@ export function LandingPageClient({
                     </p>
                     <Link
                       href={`mailto:${supportEmail}`}
-                      className="text-muted-foreground hover:text-primary mt-1 block break-all text-sm"
+                      className="text-muted-foreground hover:text-primary mt-1 block text-sm break-all"
                     >
                       {supportEmail}
                     </Link>

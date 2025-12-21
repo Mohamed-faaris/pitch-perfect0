@@ -111,7 +111,7 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${geist.variable} ${poppins.variable}`}
-      suppressHydrationOnChange
+      suppressHydrationWarning
     >
       <body className="bg-background text-foreground min-h-screen font-sans">
         <PHProvider>

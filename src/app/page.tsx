@@ -4,492 +4,349 @@ import Image from "next/image";
 import Link from "next/link";
 import { useMemo } from "react";
 import {
-  ArrowRight,
+  ArrowUpRight,
+  CalendarCheck,
+  GalleryHorizontal,
+  Instagram,
   MapPin,
   Phone,
-  Instagram,
-  Zap,
-  Star,
-  MessageCircle,
+  ShieldCheck,
+  Sparkles,
+  Ticket,
+  Timer,
 } from "lucide-react";
-import { motion } from "motion/react";
-import { useLanguage } from "~/lib/language-context";
-import allTranslations from "~/lib/translations/all";
+
+import { LocationWidget } from "~/components/location-widget";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
-import { LocationWidget } from "~/components/location-widget";
-import { api } from "~/trpc/react";
 import { WhatsAppIcon } from "~/components/ui/whatsapp-icon";
+import { useLanguage } from "~/lib/language-context";
+import allTranslations from "~/lib/translations/all";
+import { api } from "~/trpc/react";
 
 const whatsappNumber = "+917358848765";
-const instagramUrl = "https://www.instagram.com/search?q=pitchperfecturniture";
-const contactPhone = "+91 73588 48765";
+const instagramUrl = "https://www.instagram.com/+917358848765/?hl=en";
+const supportEmail = "support@pitchperfectapk.com";
 
 export default function LandingPage() {
   const { language } = useLanguage();
-  const strings = useMemo(() => allTranslations.landing[language], [language]);
-
-  const { data: galleryItems } = api.gallery.getAll.useQuery();
-  const { data: bannerItems } = api.banner.getAll.useQuery();
-
-  const features = useMemo(
-    () => [
-      {
-        key: "booking",
-        icon: Zap,
-        title: strings.feature1Title,
-        desc: strings.feature1Desc,
-        color: "from-blue-500/20 to-blue-600/20",
-      },
-      {
-        key: "location",
-        icon: MapPin,
-        title: strings.feature2Title,
-        desc: strings.feature2Desc,
-        color: "from-green-500/20 to-green-600/20",
-      },
-      {
-        key: "amenities",
-        icon: Star,
-        title: strings.feature3Title,
-        desc: strings.feature3Desc,
-        color: "from-yellow-500/20 to-yellow-600/20",
-      },
-      {
-        key: "support",
-        icon: MessageCircle,
-        title: strings.feature4Title,
-        desc: strings.feature4Desc,
-        color: "from-purple-500/20 to-purple-600/20",
-      },
-    ],
-    [strings],
+  const homeStrings = useMemo(() => allTranslations.home[language], [language]);
+  const contactStrings = useMemo(
+    () => allTranslations.contact[language],
+    [language],
+  );
+  const galleryStrings = useMemo(
+    () => allTranslations.gallery[language],
+    [language],
   );
 
-  const heroSlides = useMemo(() => {
-    return (
-      bannerItems
-        ?.filter((item) => item.mediaType === "image")
-        .slice(0, 3)
-        .map((item) => ({
-          id: String(item.id),
-          src: item.cloudinaryUrl,
-          alt: item.altText ?? item.title ?? "Pitch Perfect",
-        })) ?? []
-    );
-  }, [bannerItems]);
+  const { data: galleryItems } = api.gallery.getAll.useQuery(undefined, {
+    staleTime: 60_000,
+  });
 
   const galleryPreview = useMemo(() => {
-    return galleryItems?.slice(0, 3) ?? [];
+    const items = galleryItems?.slice(0, 6) ?? [];
+    return items.map((item) => ({
+      id: item.id,
+      src:
+        item.mediaType === "video" && item.thumbnailUrl
+          ? item.thumbnailUrl
+          : item.cloudinaryUrl,
+      alt: item.altText ?? item.title ?? "Gallery item",
+      mediaType: item.mediaType,
+    }));
   }, [galleryItems]);
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-        delayChildren: 0.2,
+  const featureCards = useMemo(
+    () => [
+      {
+        title: "Fast booking",
+        desc: "Pick a slot and confirm in minutes.",
+        Icon: CalendarCheck,
       },
-    },
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.5,
+      {
+        title: "Instant ticket",
+        desc: "Get a booking ticket after confirmation.",
+        Icon: Ticket,
       },
-    },
-  };
+      {
+        title: "Clear timings",
+        desc: "See available time ranges for each day.",
+        Icon: Timer,
+      },
+      {
+        title: "Trusted support",
+        desc: "Call or WhatsApp us for help.",
+        Icon: ShieldCheck,
+      },
+    ],
+    [],
+  );
 
   return (
-    <motion.div
-      className="from-background via-background to-secondary/10 min-h-screen bg-linear-to-b"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-    >
-      {/* Hero Section */}
-      <section className="relative overflow-hidden px-4 py-12">
-        <motion.div
-          className="space-y-6"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          {/* Hero Image/Banner */}
-          {heroSlides?.[0] && (
-            <motion.div
-              className="relative h-64 w-full overflow-hidden rounded-3xl"
-              whileHover={{ scale: 1.02 }}
-              transition={{ type: "spring", stiffness: 300, damping: 20 }}
-            >
-              <Image
-                src={heroSlides[0].src}
-                alt={heroSlides[0].alt}
-                fill
-                className="object-cover"
-                priority
-              />
-              <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-transparent" />
-            </motion.div>
-          )}
-
-          {/* Hero Text */}
-          <motion.div className="space-y-4">
-            <motion.div variants={itemVariants} className="space-y-2">
-              <h1 className="text-4xl font-bold tracking-tight">
-                {strings.headline}
-              </h1>
-              <p className="text-muted-foreground text-lg">
-                {strings.subheadline}
-              </p>
-            </motion.div>
-
-            {/* CTA Buttons */}
-            <motion.div
-              className="flex flex-col gap-3 pt-4"
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
-            >
-              <Link href="/(tabs)/book" className="block">
-                <motion.div
-                  whileHover={{ y: -2 }}
-                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                >
-                  <Button className="h-12 w-full gap-2 rounded-xl text-base font-semibold">
-                    {strings.bookNow}
-                    <ArrowRight className="h-5 w-5" />
-                  </Button>
-                </motion.div>
-              </Link>
-
-              <Link
-                href={`https://wa.me/${whatsappNumber.replace(/\s/g, "")}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block"
-              >
-                <motion.div
-                  whileHover={{ y: -2 }}
-                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                >
-                  <Button
-                    variant="outline"
-                    className="h-12 w-full gap-2 rounded-xl text-base font-semibold"
-                  >
-                    <WhatsAppIcon className="h-5 w-5" />
-                    Chat with us
-                  </Button>
-                </motion.div>
-              </Link>
-            </motion.div>
-          </motion.div>
-        </motion.div>
-      </section>
-
-      {/* Features Section */}
-      <section className="px-4 py-12">
-        <motion.div
-          className="space-y-6"
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          transition={{ duration: 0.6 }}
-          viewport={{ once: true }}
-        >
-          <motion.div className="space-y-2">
+    <main className="flex-1 overflow-y-auto">
+      <div className="mx-auto w-full px-4 py-6">
+        <div className="space-y-10">
+          <header className="space-y-4">
             <p className="text-muted-foreground text-xs tracking-wide uppercase">
-              {strings.featureSectionTitle}
+              {contactStrings.subtitle}
             </p>
-            <h2 className="text-2xl font-bold">{strings.featuresTitle}</h2>
-          </motion.div>
+            <div className="space-y-2">
+              <h1 className="bbh-hegarty-regular text-2xl tracking-[0.08em] uppercase">
+                Pitch Perfect Turf
+              </h1>
+              <p className="text-muted-foreground text-sm">
+                {
+                  "Book your turf slot, view tickets, explore the gallery, and get directions—all in one place."
+                }
+              </p>
+            </div>
 
-          <motion.div
-            className="grid gap-4"
-            variants={containerVariants}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-          >
-            {features.map(({ key, icon: Icon, title, desc, color }) => (
-              <motion.div key={key} variants={itemVariants}>
-                <Card className="group border-border/60 hover:border-primary/50 relative overflow-hidden p-4 transition-all duration-300">
-                  <div
-                    className={`absolute inset-0 bg-linear-to-r ${color} opacity-0 transition-opacity duration-300 group-hover:opacity-100`}
-                  />
-                  <div className="relative z-10 flex gap-4">
-                    <div className="bg-primary/10 flex h-12 w-12 shrink-0 items-center justify-center rounded-xl">
-                      <Icon className="text-primary h-6 w-6" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-semibold">{title}</h3>
-                      <p className="text-muted-foreground text-sm">{desc}</p>
+            <div className="grid grid-cols-2 gap-3">
+              <Button asChild className="rounded-full">
+                <Link
+                  href="/book"
+                  className="flex items-center justify-center gap-2"
+                >
+                  <CalendarCheck className="h-4 w-4" />
+                  {homeStrings.bookTicket}
+                </Link>
+              </Button>
+              <Button asChild variant="outline" className="rounded-full">
+                <Link
+                  href="/view"
+                  className="flex items-center justify-center gap-2"
+                >
+                  <Ticket className="h-4 w-4" />
+                  {homeStrings.viewTicket}
+                </Link>
+              </Button>
+            </div>
+
+            <Card className="border-border/60 overflow-hidden rounded-2xl p-0">
+              <div className="relative h-36 w-full">
+                <Image
+                  src="/og-apurkotai-turf.jpg"
+                  alt="Pitch Perfect Turf"
+                  fill
+                  priority
+                  className="object-cover"
+                />
+                <div className="absolute inset-0 bg-linear-to-t from-black/55 to-black/0" />
+                <div className="absolute inset-x-0 bottom-0 p-4">
+                  <div className="bg-background/85 border-border/60 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs">
+                    <Sparkles className="text-primary h-3.5 w-3.5" />
+                    <span className="text-muted-foreground">
+                      {"Aruppukottai • Tamil Nadu"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </Card>
+
+            <div className="flex items-center justify-between">
+              <Button asChild variant="link" className="px-0">
+                <Link href="/home" className="flex items-center gap-1">
+                  {"Open app"} <ArrowUpRight className="h-4 w-4" />
+                </Link>
+              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  asChild
+                  size="icon"
+                  variant="outline"
+                  className="rounded-full"
+                >
+                  <Link href="/gallery" aria-label={galleryStrings.title}>
+                    <GalleryHorizontal className="h-4 w-4" />
+                  </Link>
+                </Button>
+                <Button
+                  asChild
+                  size="icon"
+                  variant="outline"
+                  className="rounded-full"
+                >
+                  <Link href="/contact" aria-label={contactStrings.title}>
+                    <Phone className="h-4 w-4" />
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          </header>
+
+          <section className="space-y-3">
+            <div className="flex items-end justify-between">
+              <h2 className="text-lg font-semibold">{"Features"}</h2>
+              <p className="text-muted-foreground text-xs">
+                {"Simple • Mobile-first"}
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {featureCards.map(({ title, desc, Icon }) => (
+                <Card key={title} className="border-border/60 rounded-2xl p-4">
+                  <div className="flex items-start gap-3">
+                    {/* <span className="bg-background text-primary border-border/60 flex h-10 w-10 items-center justify-center rounded-2xl border"> */}
+                    <Icon className="h-10 w-10" aria-hidden="true" />
+                    {/* </span> */}
+                    <div className="min-w-0">
+                      <p className="text-foreground text-sm font-semibold">
+                        {title}
+                      </p>
+                      <p className="text-muted-foreground text-xs">{desc}</p>
                     </div>
                   </div>
                 </Card>
-              </motion.div>
-            ))}
-          </motion.div>
-        </motion.div>
-      </section>
-
-      {/* Location Section */}
-      <section className="px-4 py-12">
-        <motion.div
-          className="space-y-6"
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          transition={{ duration: 0.6 }}
-          viewport={{ once: true }}
-        >
-          <motion.div className="space-y-2">
-            <p className="text-muted-foreground text-xs tracking-wide uppercase">
-              {strings.locationSectionTitle}
-            </p>
-            <h2 className="text-2xl font-bold">
-              {strings.locationSectionTitle}
-            </h2>
-          </motion.div>
-
-          <motion.div
-            whileHover={{ scale: 1.02 }}
-            transition={{ type: "spring", stiffness: 300, damping: 20 }}
-          >
-            <Card className="overflow-hidden p-0">
-              <LocationWidget />
-            </Card>
-          </motion.div>
-        </motion.div>
-      </section>
-
-      {/* Gallery Preview Section */}
-      {galleryPreview.length > 0 && (
-        <section className="px-4 py-12">
-          <motion.div
-            className="space-y-6"
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-          >
-            <motion.div className="space-y-2">
-              <p className="text-muted-foreground text-xs tracking-wide uppercase">
-                {strings.galleryTitle}
-              </p>
-              <h2 className="text-2xl font-bold">{strings.visitGallery}</h2>
-            </motion.div>
-
-            <motion.div
-              className="grid grid-cols-3 gap-3"
-              variants={containerVariants}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-            >
-              {galleryPreview.map((item) => (
-                <motion.div
-                  key={item.id}
-                  variants={itemVariants}
-                  whileHover={{ scale: 1.05 }}
-                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                >
-                  <Link href="/(tabs)/gallery" className="block">
-                    <div className="group relative h-32 w-full cursor-pointer overflow-hidden rounded-2xl">
-                      <Image
-                        src={item.cloudinaryUrl}
-                        alt={item.title ?? "Gallery"}
-                        fill
-                        className="object-cover transition-transform duration-300 group-hover:scale-110"
-                      />
-                    </div>
-                  </Link>
-                </motion.div>
               ))}
-            </motion.div>
+            </div>
+          </section>
 
-            <Link href="/(tabs)/gallery" className="block">
-              <motion.div
-                whileHover={{ y: -2 }}
-                transition={{ type: "spring", stiffness: 300, damping: 20 }}
-              >
-                <Button
-                  variant="outline"
-                  className="h-11 w-full rounded-xl font-semibold"
-                >
-                  {strings.viewGallery}
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </motion.div>
-            </Link>
-          </motion.div>
-        </section>
-      )}
+          <section className="space-y-3">
+            <h2 className="text-lg font-semibold">{"Details"}</h2>
+            <Card className="border-border/60 rounded-2xl p-6">
+              <div className="space-y-4 text-sm">
+                <div className="flex items-start gap-2">
+                  <MapPin className="text-muted-foreground mt-0.5 h-4 w-4" />
+                  <p className="text-muted-foreground">
+                    {
+                      "12/4A, Pitch Perfect Turf, Aruppukottai Main Road, Tamil Nadu."
+                    }
+                  </p>
+                </div>
+                <div className="flex items-start gap-2">
+                  <Phone className="text-muted-foreground mt-0.5 h-4 w-4" />
+                  <div className="space-y-1">
+                    <Link
+                      href={`tel:${whatsappNumber}`}
+                      className="text-foreground hover:text-primary font-medium"
+                    >
+                      {"+91 73588 48765"}
+                    </Link>
+                    <p className="text-muted-foreground">
+                      {contactStrings.frontDesk}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="text-muted-foreground mt-0.5 inline-flex h-4 w-4 items-center justify-center text-[10px] font-semibold">
+                    {"@"}
+                  </span>
+                  <Link
+                    href={`mailto:${supportEmail}`}
+                    className="text-muted-foreground hover:text-primary"
+                  >
+                    {supportEmail}
+                  </Link>
+                </div>
+              </div>
+            </Card>
+          </section>
 
-      {/* Contact Section */}
-      <section className="px-4 py-12">
-        <motion.div
-          className="space-y-6"
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          transition={{ duration: 0.6 }}
-          viewport={{ once: true }}
-        >
-          <motion.div className="space-y-2">
-            <p className="text-muted-foreground text-xs tracking-wide uppercase">
-              {strings.contactSectionTitle}
-            </p>
-            <h2 className="text-2xl font-bold">
-              {strings.contactSectionTitle}
+          <section className="space-y-3">
+            <div className="flex items-end justify-between">
+              <h2 className="text-lg font-semibold">{galleryStrings.title}</h2>
+              <Button asChild variant="link" className="px-0">
+                <Link href="/gallery" className="flex items-center gap-1">
+                  {galleryStrings.view} <ArrowUpRight className="h-4 w-4" />
+                </Link>
+              </Button>
+            </div>
+
+            {galleryPreview.length > 0 ? (
+              <div className="grid grid-cols-3 gap-2">
+                {galleryPreview.map((item) => (
+                  <Card
+                    key={item.id}
+                    className="overflow-hidden rounded-2xl p-0"
+                  >
+                    <div className="relative aspect-square w-full">
+                      <Image
+                        src={item.src}
+                        alt={item.alt}
+                        fill
+                        className="object-cover"
+                      />
+                      {item.mediaType === "video" ? (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/25">
+                          <span className="bg-background/85 text-muted-foreground rounded-full px-2 py-1 text-[10px]">
+                            {"Video"}
+                          </span>
+                        </div>
+                      ) : null}
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <Card className="border-border/60 rounded-2xl p-6">
+                <p className="text-muted-foreground text-sm">
+                  {galleryStrings.noItems}
+                </p>
+                <div className="mt-3">
+                  <Button
+                    asChild
+                    variant="outline"
+                    className="w-full rounded-full"
+                  >
+                    <Link
+                      href="/gallery"
+                      className="flex items-center justify-center gap-2"
+                    >
+                      <GalleryHorizontal className="h-4 w-4" />
+                      {"Open gallery"}
+                    </Link>
+                  </Button>
+                </div>
+              </Card>
+            )}
+          </section>
+
+          <section className="space-y-3">
+            <h2 className="text-lg font-semibold">
+              {homeStrings.locationTitle}
             </h2>
-          </motion.div>
+            <LocationWidget />
+          </section>
 
-          <motion.div
-            className="grid gap-3"
-            variants={containerVariants}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-          >
-            {/* Call Button */}
-            <motion.div variants={itemVariants}>
-              <a
-                href={`tel:${contactPhone.replace(/\s/g, "")}`}
-                className="block"
-              >
-                <motion.div
-                  whileHover={{ y: -2 }}
-                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
+          <section className="space-y-3">
+            <h2 className="text-lg font-semibold">{contactStrings.title}</h2>
+            <div className="grid grid-cols-2 gap-3">
+              <Button asChild variant="outline" className="rounded-full">
+                <Link
+                  href={`https://wa.me/${whatsappNumber}?text=Hi%20Pitch%20Perfect%2C%20I%20need%20help%20with%20a%20booking.`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center justify-center gap-2"
                 >
-                  <Card className="group border-border/60 hover:border-primary/50 flex cursor-pointer items-center gap-4 p-4 transition-all">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-red-500/10">
-                      <Phone className="h-6 w-6 text-red-500" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-semibold">
-                        {allTranslations.contact[language].callButton}
-                      </h3>
-                      <p className="text-muted-foreground text-sm">
-                        {contactPhone}
-                      </p>
-                    </div>
-                    <ArrowRight className="text-muted-foreground group-hover:text-primary h-4 w-4 transition-colors" />
-                  </Card>
-                </motion.div>
-              </a>
-            </motion.div>
-
-            {/* WhatsApp Button */}
-            <motion.div variants={itemVariants}>
-              <a
-                href={`https://wa.me/${whatsappNumber.replace(/\s/g, "")}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block"
-              >
-                <motion.div
-                  whileHover={{ y: -2 }}
-                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                >
-                  <Card className="group border-border/60 hover:border-primary/50 flex cursor-pointer items-center gap-4 p-4 transition-all">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-green-500/10">
-                      <WhatsAppIcon className="h-6 w-6 text-green-500" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-semibold">WhatsApp</h3>
-                      <p className="text-muted-foreground text-sm">
-                        {allTranslations.contact[language].whatsappDesc}
-                      </p>
-                    </div>
-                    <ArrowRight className="text-muted-foreground group-hover:text-primary h-4 w-4 transition-colors" />
-                  </Card>
-                </motion.div>
-              </a>
-            </motion.div>
-
-            {/* Instagram Button */}
-            <motion.div variants={itemVariants}>
-              <a
-                href={instagramUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block"
-              >
-                <motion.div
-                  whileHover={{ y: -2 }}
-                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                >
-                  <Card className="group border-border/60 hover:border-primary/50 flex cursor-pointer items-center gap-4 p-4 transition-all">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-pink-500/10">
-                      <Instagram className="h-6 w-6 text-pink-500" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-semibold">
-                        {allTranslations.contact[language].instagramTitle}
-                      </h3>
-                      <p className="text-muted-foreground text-sm">
-                        {allTranslations.contact[language].instagramDesc}
-                      </p>
-                    </div>
-                    <ArrowRight className="text-muted-foreground group-hover:text-primary h-4 w-4 transition-colors" />
-                  </Card>
-                </motion.div>
-              </a>
-            </motion.div>
-          </motion.div>
-
-          <Link href="/(tabs)/contact" className="block">
-            <motion.div
-              whileHover={{ y: -2 }}
-              transition={{ type: "spring", stiffness: 300, damping: 20 }}
-            >
-              <Button
-                variant="outline"
-                className="h-11 w-full rounded-xl font-semibold"
-              >
-                {allTranslations.contact[language].title}
-                <ArrowRight className="ml-2 h-4 w-4" />
+                  <WhatsAppIcon className="h-5 w-5" />
+                  {"WhatsApp"}
+                </Link>
               </Button>
-            </motion.div>
-          </Link>
-        </motion.div>
-      </section>
-
-      {/* Final CTA Section */}
-      <section className="px-4 py-12">
-        <motion.div
-          className="from-primary/10 via-primary/5 space-y-6 rounded-3xl bg-linear-to-r to-transparent p-8 text-center"
-          initial={{ opacity: 0, scale: 0.95 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.6 }}
-          viewport={{ once: true }}
-        >
-          <motion.div className="space-y-3">
-            <h2 className="text-2xl font-bold">Ready to Play?</h2>
-            <p className="text-muted-foreground">
-              Book your premium turf slot today and experience the difference.
-            </p>
-          </motion.div>
-
-          <Link href="/(tabs)/book" className="block">
-            <motion.div
-              whileHover={{ y: -2 }}
-              transition={{ type: "spring", stiffness: 300, damping: 20 }}
-            >
-              <Button className="h-12 gap-2 rounded-xl px-8 text-base font-semibold">
-                {strings.bookNow}
-                <ArrowRight className="h-5 w-5" />
+              <Button asChild variant="outline" className="rounded-full">
+                <Link
+                  href={instagramUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center justify-center gap-2"
+                >
+                  <Instagram className="h-4 w-4" />
+                  {"Instagram"}
+                </Link>
               </Button>
-            </motion.div>
-          </Link>
-        </motion.div>
-      </section>
+            </div>
 
-      {/* Footer Spacing */}
-      <div className="h-8" />
-    </motion.div>
+            <Button asChild className="w-full rounded-full">
+              <Link
+                href="/contact"
+                className="flex items-center justify-center gap-2"
+              >
+                <Phone className="h-4 w-4" />
+                {"Open contact page"}
+              </Link>
+            </Button>
+          </section>
+        </div>
+      </div>
+    </main>
   );
 }

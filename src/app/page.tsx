@@ -25,8 +25,10 @@ import allTranslations from "~/lib/translations/all";
 import { api } from "~/trpc/react";
 
 const whatsappNumber = "+917358848765";
+const whatsappDigits = whatsappNumber.replace(/\D/g, "");
 const instagramUrl = "https://www.instagram.com/+917358848765/?hl=en";
 const supportEmail = "support@pitchperfectapk.com";
+const mapUrl = "https://maps.app.goo.gl/GtWnLZFP5PJL9cwb8";
 
 export default function LandingPage() {
   const { language } = useLanguage();
@@ -202,41 +204,156 @@ export default function LandingPage() {
           </section>
 
           <section className="space-y-3">
-            <h2 className="text-lg font-semibold">{"Details"}</h2>
-            <Card className="border-border/60 rounded-2xl p-6">
-              <div className="space-y-4 text-sm">
-                <div className="flex items-start gap-2">
-                  <MapPin className="text-muted-foreground mt-0.5 h-4 w-4" />
-                  <p className="text-muted-foreground">
-                    {
-                      "12/4A, Pitch Perfect Turf, Aruppukottai Main Road, Tamil Nadu."
-                    }
-                  </p>
-                </div>
-                <div className="flex items-start gap-2">
-                  <Phone className="text-muted-foreground mt-0.5 h-4 w-4" />
-                  <div className="space-y-1">
-                    <Link
-                      href={`tel:${whatsappNumber}`}
-                      className="text-foreground hover:text-primary font-medium"
-                    >
-                      {"+91 73588 48765"}
-                    </Link>
-                    <p className="text-muted-foreground">
-                      {contactStrings.frontDesk}
+            <div className="flex items-end justify-between">
+              <h2 className="text-lg font-semibold">{"Details"}</h2>
+              <Button asChild variant="link" className="px-0">
+                <Link
+                  href={mapUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-1"
+                >
+                  {"Directions"} <ArrowUpRight className="h-4 w-4" />
+                </Link>
+              </Button>
+            </div>
+
+            <Card className="border-border/60 overflow-hidden rounded-3xl p-0">
+              <div className="divide-border/60 divide-y">
+                <div className="flex items-start gap-4 p-5">
+                  <span className="bg-accent text-accent-foreground flex h-10 w-10 items-center justify-center rounded-2xl">
+                    <MapPin className="h-5 w-5" aria-hidden="true" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-foreground text-sm font-semibold">
+                      {"Address"}
                     </p>
+                    <p className="text-muted-foreground mt-1 text-sm">
+                      {
+                        "12/4A, Pitch Perfect Turf, Aruppukottai Main Road, Tamil Nadu."
+                      }
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <Button
+                        asChild
+                        size="sm"
+                        variant="outline"
+                        className="rounded-full"
+                      >
+                        <Link
+                          href={mapUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex items-center gap-2"
+                        >
+                          <MapPin className="h-4 w-4" />
+                          {"Open Maps"}
+                        </Link>
+                      </Button>
+                      <Button
+                        asChild
+                        size="sm"
+                        variant="outline"
+                        className="rounded-full"
+                      >
+                        <Link
+                          href="/contact"
+                          className="flex items-center gap-2"
+                        >
+                          {"More"} <ArrowUpRight className="h-4 w-4" />
+                        </Link>
+                      </Button>
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-start gap-2">
-                  <span className="text-muted-foreground mt-0.5 inline-flex h-4 w-4 items-center justify-center text-[10px] font-semibold">
+
+                <div className="flex items-start gap-4 p-5">
+                  <span className="bg-accent text-accent-foreground flex h-10 w-10 items-center justify-center rounded-2xl">
+                    <Phone className="h-5 w-5" aria-hidden="true" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-foreground text-sm font-semibold">
+                      {"Call / WhatsApp"}
+                    </p>
+                    <p className="text-muted-foreground mt-1 text-sm">
+                      {contactStrings.frontDesk} {"•"} {"+91 73588 48765"}
+                    </p>
+                    <div className="mt-3 grid grid-cols-2 gap-2">
+                      <Button asChild size="sm" className="rounded-full">
+                        <Link
+                          href={`tel:${whatsappNumber}`}
+                          className="flex items-center justify-center gap-2"
+                        >
+                          <Phone className="h-4 w-4" />
+                          {"Call"}
+                        </Link>
+                      </Button>
+                      <Button
+                        asChild
+                        size="sm"
+                        variant="outline"
+                        className="rounded-full"
+                      >
+                        <Link
+                          href={`https://wa.me/${whatsappDigits}?text=Hi%20Pitch%20Perfect%2C%20I%20need%20help%20with%20a%20booking.`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex items-center justify-center gap-2"
+                        >
+                          <WhatsAppIcon className="h-5 w-5" />
+                          {"WhatsApp"}
+                        </Link>
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-4 p-5">
+                  <span className="bg-accent text-accent-foreground flex h-10 w-10 items-center justify-center rounded-2xl text-xs font-semibold">
                     {"@"}
                   </span>
-                  <Link
-                    href={`mailto:${supportEmail}`}
-                    className="text-muted-foreground hover:text-primary"
-                  >
-                    {supportEmail}
-                  </Link>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-foreground text-sm font-semibold">
+                      {"Email"}
+                    </p>
+                    <Link
+                      href={`mailto:${supportEmail}`}
+                      className="text-muted-foreground hover:text-primary mt-1 block text-sm break-all"
+                    >
+                      {supportEmail}
+                    </Link>
+                    <div className="mt-3 grid grid-cols-2 gap-2">
+                      <Button
+                        asChild
+                        size="sm"
+                        variant="outline"
+                        className="rounded-full"
+                      >
+                        <Link
+                          href={`mailto:${supportEmail}`}
+                          className="flex items-center justify-center gap-2"
+                        >
+                          {"Send mail"}
+                        </Link>
+                      </Button>
+                      <Button
+                        asChild
+                        size="sm"
+                        variant="outline"
+                        className="rounded-full"
+                      >
+                        <Link
+                          href={instagramUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex items-center justify-center gap-2"
+                        >
+                          <Instagram className="h-4 w-4" />
+                          {"Instagram"}
+                        </Link>
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </Card>

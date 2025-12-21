@@ -53,9 +53,9 @@ export default function HomePage() {
     }
     // Fallback to highlights if no banner items
     return [
-      { id: "h1", src: "/highlights/highlight-aerial.jpg", alt: "Aerial View" },
-      { id: "h2", src: "/highlights/highlight-night.jpg", alt: "Night Match" },
-      { id: "h3", src: "/highlights/highlight-play.jpg", alt: "Day Match" },
+      { id: "h1", src: "/highlights/2-apurkotai-turf-highlights.jpeg", alt: "Aerial View" },
+      { id: "h2", src: "/highlights/3-apurkotai-turf-highlights.jpeg", alt: "Night Match" },
+      { id: "h3", src: "/highlights/4-apurkotai-turf-highlights.jpeg", alt: "Day Match" },
     ];
   }, [bannerItems]);
   const quickActions = [

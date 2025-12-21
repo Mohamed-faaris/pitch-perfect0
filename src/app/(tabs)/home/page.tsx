@@ -22,19 +22,19 @@ export default function HomePage() {
   const highlights = useMemo(
     () => [
       {
-        src: "/highlights/highlight-turf.jpg",
+        src: "/highlights/1-apurkotai-turf-highlights.jpeg",
         label: strings.highlight1,
       },
       {
-        src: "/highlights/highlight-play.jpg",
+        src: "/highlights/2-apurkotai-turf-highlights.jpeg",
         label: strings.highlight2,
       },
       {
-        src: "/highlights/highlight-night.jpg",
+        src: "/highlights/3-apurkotai-turf-highlights.jpeg",
         label: strings.highlight3,
       },
       {
-        src: "/highlights/highlight-aerial.jpg",
+        src: "/highlights/4-apurkotai-turf-highlights.jpeg",
         label: strings.highlight4,
       },
     ],
@@ -133,16 +133,19 @@ export default function HomePage() {
         <h2 className="text-lg font-semibold">{strings.highlightsTitle}</h2>
         <div className="grid grid-cols-2 gap-3">
           {highlights.map((item) => (
-            <Card key={item.src} className="overflow-hidden p-0">
-              <div className="relative h-28 w-full">
-                <Image
-                  src={item.src}
-                  alt={item.label}
-                  fill
-                  className="object-cover"
-                />
-              </div>
-            </Card>
+            <Link key={item.src} href="/home">
+              <Card className="overflow-hidden p-0">
+                <div className="relative h-28 w-full">
+                  <Image
+                    src={item.src}
+                    alt={item.label}
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+                <span className="sr-only">{item.label}</span>
+              </Card>
+            </Link>
           ))}
         </div>
       </section>

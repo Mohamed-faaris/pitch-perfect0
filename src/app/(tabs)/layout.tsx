@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 
 import { BottomNav } from "~/components/bottom-nav";
-import { FooterBranding } from "~/components/footer-branding";
 
 export default function TabsLayout({ children }: { children: ReactNode }) {
   return (
@@ -10,8 +9,6 @@ export default function TabsLayout({ children }: { children: ReactNode }) {
         {/* <div className="mx-auto w-full max-w-6xl px-4 md:px-6 lg:px-8"> */}
         {children}
         {/* </div> */}
-
-        <FooterBranding className="mx-4 mt-8 rounded-xl" />
       </main>
       <BottomNav />
     </div>

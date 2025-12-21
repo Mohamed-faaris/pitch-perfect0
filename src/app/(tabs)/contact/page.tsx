@@ -11,6 +11,7 @@ import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { LocationWidget } from "~/components/location-widget";
 import { WhatsAppIcon } from "~/components/ui/whatsapp-icon";
+import { FooterBranding } from "~/components/footer-branding";
 
 const whatsappNumber = "+917358848765";
 const instagramUrl = "https://www.instagram.com/+917358848765/?hl=en";
@@ -193,6 +194,8 @@ export default function ContactPage() {
           </Link>
         </MotionButton>
       </MotionCard>
+
+      <FooterBranding className="mt-8 rounded-xl" />
     </motion.div>
   );
 }

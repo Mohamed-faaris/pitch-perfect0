@@ -13,7 +13,6 @@ export const auth = betterAuth({
     sendResetPassword: async ({ user, url }) => {
       try {
         const result = await import("~/server/email");
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-call
         await result.sendPasswordResetEmail(user.email, {
           resetUrl: url,
           userName: user.name,

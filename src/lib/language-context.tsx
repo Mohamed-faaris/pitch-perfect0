@@ -8,12 +8,16 @@ import {
   useMemo,
   useState,
 } from "react";
+import allTranslations from "./translations/all";
 
 type Language = "en" | "ta";
 
 type LanguageContextValue = {
   language: Language;
   setLanguage: (language: Language) => void;
+  strings: {
+    [K in keyof typeof allTranslations]: (typeof allTranslations)[K][Language];
+  };
 };
 
 const STORAGE_KEY = "pitch-perfect-language";
@@ -22,18 +26,16 @@ const LanguageContext = createContext<LanguageContextValue | undefined>(
   undefined,
 );
 
-export function LanguageProvider({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguageState] = useState<Language>("en");
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
-      const stored = window.localStorage.getItem(STORAGE_KEY) as Language | null;
+      const stored = window.localStorage.getItem(
+        STORAGE_KEY,
+      ) as Language | null;
       if (stored === "en" || stored === "ta") {
         setLanguageState(stored);
       }
@@ -57,12 +59,22 @@ export function LanguageProvider({
     setLanguageState(value);
   }, []);
 
+  const strings = useMemo(() => {
+    const result: any = {};
+    for (const key in allTranslations) {
+      result[key] =
+        allTranslations[key as keyof typeof allTranslations][language];
+    }
+    return result as LanguageContextValue["strings"];
+  }, [language]);
+
   const value = useMemo<LanguageContextValue>(() => {
     return {
       language,
       setLanguage,
+      strings,
     };
-  }, [language, setLanguage]);
+  }, [language, setLanguage, strings]);
 
   return (
     <LanguageContext.Provider value={value}>

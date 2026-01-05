@@ -371,9 +371,19 @@ export default function BookingPage() {
   const toggleSlotSelection = (slot: SlotView) => {
     if (slot.date !== selectedDate) return;
     setSelectedSlots((prev) => {
-      const exists = prev.some((item) => item.id === slot.id);
+      const exists = prev.some((item) =>
+        item.id === slot.id &&
+        item.date === slot.date &&
+        item.from === slot.from &&
+        item.to === slot.to
+      );
       if (exists) {
-        return prev.filter((item) => item.id !== slot.id);
+        return prev.filter((item) =>
+          !(item.id === slot.id &&
+            item.date === slot.date &&
+            item.from === slot.from &&
+            item.to === slot.to)
+        );
       }
       if (prev.length >= MAX_SLOTS_PER_DAY) {
         return prev;
@@ -733,7 +743,11 @@ export default function BookingPage() {
               ) : (
                 slotsForSelectedDate.map((slot) => {
                   const isSelected = selectedSlots.some(
-                    (item) => item.id === slot.id,
+                    (item) =>
+                      item.id === slot.id &&
+                      item.date === slot.date &&
+                      item.from === slot.from &&
+                      item.to === slot.to
                   );
                   const isAtLimit =
                     !isSelected && selectionCount >= MAX_SLOTS_PER_DAY;

@@ -23,8 +23,8 @@ import { Button } from "~/components/ui/button";
 
 const MENU_DATA = {
   hot_beverages: [
-    { item: "Chai", price: 13 },
-    { item: "Masala Chai", price: 15 },
+    { item: "Chai", price: 15 },
+    { item: "Masala Chai", price: 20 },
     { item: "Coffee", price: 15 },
     { item: "Milk", price: 15 },
     { item: "Badam Milk", price: 20 },
@@ -41,27 +41,21 @@ const MENU_DATA = {
   ],
   soups: [
     { item: "Veg Soup", price: 25 },
-    { item: "Mushroom Soup", price: 25 },
+    { item: "Mushroom Soup", price: 30 },
     { item: "Vaazhaithandu Soup", price: 30 },
-    { item: "Mudakathan Soup", price: 40 },
+    { item: "Mudavatukal Soup", price: 70 },
     { item: "Thuthuvalai Soup", price: 25 },
-    { item: "Herbal Soup", price: 20 },
-  ],
-  chicken_varieties: [
-    { item: "Chicken Popcorn", price: null },
-    { item: "Chicken Bites", price: null },
-    { item: "Chicken Samosa", price: null },
-    { item: "Chicken Wings", price: null },
-    { item: "Chicken Drumstick", price: null },
+    { item: "Herbal Soup", price: 30 },
   ],
   momos: [
-    { item: "Veg Momos", price: 90 },
-    { item: "Chicken Momos", price: 99 },
-    { item: "Butter Chicken Momos", price: 110 },
+    { item: "Veg Momos (Steamed)", price: 90 },
+    { item: "Chicken Momos (Steamed)", price: 100 },
+    { item: "Veg Momos (Fried)", price: 110 },
+    { item: "Chicken Momos (Fried)", price: 120 },
   ],
   fries: [
-    { item: "French Fries", price: 70 },
-    { item: "Peri Peri French Fries", price: 80 },
+    { item: "French Fries", price: 75 },
+    { item: "Peri Peri Fries", price: 85 },
     { item: "Smiles", price: 70 },
   ],
   loaded_chicken: [
@@ -69,30 +63,51 @@ const MENU_DATA = {
     { item: "Lays Loaded Chicken", price: 119 },
     { item: "French Fries Loaded Chicken", price: 100 },
   ],
-  ice_cream: [
-    { item: "Vanilla", price: 25 },
-    { item: "Chocolate", price: 25 },
+  rice_and_noodles: [
+    { item: "Chicken Rice", price: 100 },
+    { item: "Chicken Rice Combo (Rice + Chicken 65)", price: 140 },
+    { item: "Schezwan Chicken Rice", price: 120 },
+    { item: "Veg Rice", price: 70 },
+    { item: "Egg Rice", price: 85 },
+    { item: "Chicken Noodles", price: 110 },
+    { item: "Schezwan Chicken Noodles", price: 120 },
   ],
-  cold_beverages: [
-    { item: "Cold Coffee", price: 80 },
-    { item: "Mint Mojito", price: 75 },
-    { item: "Blue Curacao", price: 85 },
+  fried_specials: [
+    { item: "Chicken 65", price: 140 },
+    { item: "Gobi 65", price: 110 },
+    { item: "Paneer 65", price: 120 },
+    { item: "Mushroom 65", price: 120 },
   ],
   sandwiches: [
-    { item: "Veg Sandwich", price: 60 },
-    { item: "Cheese Sandwich", price: 70 },
+    { item: "Veg Sandwich", price: 50 },
+    { item: "Cheese Sandwich", price: 60 },
     { item: "Egg Sandwich", price: 70 },
+    { item: "Chicken Sandwich", price: 80 },
+    { item: "Bread Omelette", price: 70 },
   ],
-  rice: [
-    { item: "Veg Rice", price: 80 },
-    { item: "Chicken Rice", price: 100 },
-    { item: "Egg Rice", price: 90 },
-  ],
-  chaat: [
+  snacks: [
+    { item: "Egg Pejo", price: 30 },
+    { item: "Bun Muska", price: 30 },
     { item: "Bun Butter", price: 40 },
     { item: "Pani Puri", price: 20 },
     { item: "Dahi Puri", price: 25 },
     { item: "Bhel Puri", price: 30 },
+  ],
+  chicken_varieties: [
+    { item: "Chicken Popcorn", price: 80 },
+    { item: "Chicken Bites", price: 100 },
+    { item: "Chicken Samosa", price: 80 },
+    { item: "Chicken Wings", price: 110 },
+    { item: "Chicken Drumstick (Single Piece)", price: 100 },
+  ],
+  ice_cream: [
+    { item: "Vanilla", price: 30 },
+    { item: "Chocolate", price: 35 },
+  ],
+  cold_beverages: [
+    { item: "Cold Coffee", price: 90 },
+    { item: "Mint Mojito", price: 80 },
+    { item: "Blue Curacao", price: 85 },
   ],
 };
 
@@ -107,8 +122,9 @@ const CATEGORY_ICONS: Record<string, any> = {
   ice_cream: IceCream,
   cold_beverages: CupSoda,
   sandwiches: Sandwich,
-  rice: Utensils,
-  chaat: Utensils,
+  rice_and_noodles: Utensils,
+  fried_specials: Flame,
+  snacks: Utensils,
 };
 
 export default function CafeMenuPage() {

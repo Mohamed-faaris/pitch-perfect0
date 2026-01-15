@@ -8,6 +8,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
         "",
         "home",
         "book",
+        "cafe-menu",
         "contact",
         "gallery",
         "instructions",

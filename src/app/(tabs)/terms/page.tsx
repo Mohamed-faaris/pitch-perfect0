@@ -8,8 +8,11 @@ import {
   Shield,
   Gavel,
   Clock,
+  Phone,
   Mail,
 } from "lucide-react";
+import Link from "next/link";
+import { WhatsAppIcon } from "~/components/ui/whatsapp-icon";
 import { Card } from "~/components/ui/card";
 import { FooterBranding } from "~/components/footer-branding";
 
@@ -43,6 +46,12 @@ const s = {
     contactTitle: "Contact Information",
     contactDesc:
       "For questions about these Terms and Conditions, please contact us at support@pitchperfectapk.com.",
+    phoneLabel: "Call Us",
+    phoneNumber: "+91 73588 48765",
+    emailLabel: "Email Us",
+    emailAddress: "support@pitchperfectapk.com",
+    whatsappLabel: "WhatsApp",
+    whatsappCTA: "Chat on WhatsApp",
   },
   ta: {
     title: "விதிமுறைகள் மற்றும் நிபந்தனைகள்",
@@ -141,15 +150,52 @@ export default function TermsPage() {
         transition={{ duration: 0.4, delay: 0.35 }}
       >
         <Card className="p-6">
-          <div className="flex items-start gap-3">
-            <div className="bg-primary/10 text-primary flex h-10 w-10 shrink-0 items-center justify-center rounded-full">
-              <Mail className="h-5 w-5" />
+          <div className="space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="bg-primary/10 text-primary flex h-10 w-10 shrink-0 items-center justify-center rounded-full">
+                <Phone className="h-5 w-5" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold">{s.en.phoneLabel}</h3>
+                <Link
+                  href={`tel:${s.en.phoneNumber.replace(/\s+/g, "")}`}
+                  className="text-muted-foreground hover:text-primary mt-1 block text-sm"
+                >
+                  {s.en.phoneNumber}
+                </Link>
+              </div>
             </div>
-            <div>
-              <h3 className="font-semibold">{s.en.contactTitle}</h3>
-              <p className="text-muted-foreground mt-1 text-sm">
-                {s.en.contactDesc}
-              </p>
+
+            <div className="flex items-start gap-3">
+              <div className="bg-primary/10 text-primary flex h-10 w-10 shrink-0 items-center justify-center rounded-full">
+                <Mail className="h-5 w-5" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold">{s.en.emailLabel}</h3>
+                <Link
+                  href={`mailto:${s.en.emailAddress}`}
+                  className="text-muted-foreground hover:text-primary mt-1 block text-sm"
+                >
+                  {s.en.emailAddress}
+                </Link>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3">
+              <div className="bg-primary/10 text-primary flex h-10 w-10 shrink-0 items-center justify-center rounded-full">
+                <WhatsAppIcon className="h-5 w-5" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold">{s.en.whatsappLabel}</h3>
+                <Link
+                  href={`https://wa.me/917358848765?text=Hi%20Pitch%20Perfect%2C%20I%20have%20a%20question%20about%20the%20terms%20and%20conditions.`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-muted-foreground hover:text-primary mt-1 block text-sm"
+                >
+                  {s.en.whatsappCTA}
+                </Link>
+              </div>
             </div>
           </div>
         </Card>

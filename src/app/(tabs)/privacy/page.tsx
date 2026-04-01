@@ -10,14 +10,11 @@ import {
   Mail,
   User,
   Clock,
-  FileText,
-  CreditCard,
-  Truck,
-  Undo,
-  AlertTriangle,
   Globe,
   Scale,
   MapPin,
+  Eye,
+  Server,
 } from "lucide-react";
 import Link from "next/link";
 import { WhatsAppIcon } from "~/components/ui/whatsapp-icon";
@@ -28,77 +25,48 @@ const s = {
   en: {
     title: "Privacy Policy",
     subtitle: "Your privacy matters",
-    effectiveDate: "Effective Date: 01-04-2026",
+    effectiveDate: "Effective Date: 30-03-2026",
     intro:
-      "At Pitch Perfect (pitchperfect.turf), we value your privacy and are committed to safeguarding your personal information. This Privacy Policy outlines how we collect, use, disclose, and protect your data when you visit or make a purchase from our website. By using our website, you agree to the terms described in this policy.",
-    collectionTitle: "Information We Collect",
+      "At Pitch Perfect (pitchperfect.turf), we value your privacy and are committed to safeguarding your personal information. This Privacy Policy outlines how we collect, use, disclose, and protect your data when you visit or make a purchase from our website.\n\nBy using our website, you agree to the terms described in this policy.",
+    collectionTitle: "1. Information We Collect",
     collectionDesc:
-      "We collect personal information that you voluntarily provide to us when you place orders, sign up, or contact us. This includes: Full Name, Email Address, Phone Number, Shipping & Billing Address, Payment Details (processed securely via third-party gateways). We may also automatically collect: IP Address, Browser Type & Device Information, Pages Visited and Time Spent, Cookies and Usage Data.",
-    usageTitle: "How We Use Your Information",
+      "To provide a seamless booking experience, we may collect the following types of information:\na) Personal Information\n\nWhen you interact with our website (place bookings, sign up, or contact us), we may collect:\n• Full Name\n• Email Address\n• Phone Number\n• Booking Details\n• Payment Details (processed securely via third-party gateways)\n\nb) Non-Personal Information\n\nWe may automatically collect:\n• IP Address\n• Browser Type & Device Information\n• Pages Visited and Time Spent\n• Cookies and Usage Data",
+    usageTitle: "2. How We Use Your Information",
     usageDesc:
-      "We use the collected data for: Processing and delivering your orders; Providing customer support and responding to queries; Sending order updates and service-related notifications; Sending promotional emails/offers (you can opt out anytime); Improving website performance and user experience; Complying with legal obligations.",
-    cookiesTitle: "Cookies and Tracking Technologies",
-    cookiesDesc:
-      "We use cookies and similar technologies to enhance your browsing experience. Cookies help us: Remember user preferences; Analyze website traffic; Improve functionality. You can disable cookies anytime through your browser settings.",
-    productsTitle: "Products and Services",
-    productsDesc:
-      "We strive to display our products as accurately as possible. However: Product colors may vary slightly due to screen settings and lighting conditions; All products are subject to availability; We reserve the right to modify, update, or discontinue any product at any time without prior notice.",
-    pricingTitle: "Pricing",
-    pricingDesc:
-      "All prices are listed in Indian Rupees (INR). Prices are inclusive of applicable taxes unless stated otherwise. We reserve the right to change pricing, discounts, or offers at any time without prior notice.",
-    ordersTitle: "Orders",
-    ordersDesc:
-      "Once you place an order, you will receive an order confirmation email. This email is only an acknowledgment and does not guarantee acceptance of the order. We reserve the right to cancel or refuse any order due to: Product unavailability; Pricing errors; Suspicious or fraudulent activity.",
-    paymentTitle: "Payment",
-    paymentDesc:
-      "We accept multiple payment methods including: Credit/Debit Cards, UPI, Net Banking, Cash on Delivery (COD) (if available). Additional charges may apply for COD orders.",
-    shippingTitle: "Shipping",
-    shippingDesc:
-      "We offer shipping across India. Estimated delivery timelines are mentioned on product pages but may vary due to: Courier delays; Weather conditions; Public holidays or unforeseen circumstances.",
-    returnsTitle: "Returns and Refunds",
-    returnsDesc:
-      "Please refer to our Return & Refund Policy page for complete details regarding eligibility, process, and timelines.",
-    securityTitle: "How We Protect Your Information",
+      "We use the collected data for the following purposes:\n\n• To process and deliver your bookings\n• To provide customer support and respond to queries\n• To send booking updates and service-related notifications\n• To send promotional emails/offers (you can opt out anytime)\n• To improve website performance and user experience\n• To comply with legal obligations",
+    cookiesTitle: "3. Cookies and Tracking Technologies",
+    usageDesc2:
+      "We use cookies and similar technologies to enhance your browsing experience. Cookies help us:\n\n• Remember user preferences\n• Analyze website traffic\n• Improve functionality\n\nYou can disable cookies anytime through your browser settings.",
+    securityTitle: "4. Data Security",
     securityDesc:
-      "We implement industry-standard security measures to protect your personal data from unauthorized access, misuse, or disclosure. However, please note: No method of transmission over the internet is 100% secure, and we cannot guarantee absolute security.",
-    sharingTitle: "Information Sharing",
+      "We implement industry-standard security measures to protect your personal data from unauthorized access, misuse, or disclosure.\n\nHowever, please note:\nNo method of transmission over the internet is 100% secure, and we cannot guarantee absolute security.",
+    sharingTitle: "5. Sharing of Information",
     sharingDesc:
-      "We do not sell or rent your personal data. However, we may share your information with: Service Providers (payment gateways, logistics partners, marketing tools); Legal Requirements (if required by law or to protect our legal rights and prevent fraud).",
-    rightsTitle: "Your Rights",
+      "We do not sell or rent your personal data. However, we may share your information in the following cases:\na) Service Providers\n\nTrusted third parties (such as payment gateways, booking management tools) to complete your bookings.\nb) Legal Requirements\n\nIf required by law or to protect our legal rights and prevent fraud.",
+    rightsTitle: "6. Your Rights and Choices",
     rightsDesc:
-      "You have the right to: Access or update your personal data; Request deletion of your data; Opt out of marketing emails anytime; Withdraw consent for data usage. To exercise these rights, contact us at support@pitchperfectapk.com.",
-    thirdPartyTitle: "Third-Party Links",
+      "You have the right to:\n\n• Access or update your personal data\n• Request deletion of your data\n• Opt out of marketing emails anytime\n• Withdraw consent for data usage\n\nTo exercise these rights, contact us at: a2zsmart2025@gmail.com",
+    thirdPartyTitle: "7. Third-Party Links",
     thirdPartyDesc:
       "Our website may include links to third-party websites. We are not responsible for their privacy practices. We recommend reviewing their policies before sharing any personal information.",
-    childrenTitle: "Children's Privacy",
+    childrenTitle: "8. Children's Privacy",
     childrenDesc:
       "Our website is not intended for individuals under the age of 18. We do not knowingly collect data from children. If such data is identified, it will be deleted promptly.",
-    useTitle: "Use of Website",
-    useDesc:
-      "You agree not to misuse the website. Prohibited activities include: Hacking or unauthorized access; Spreading malware or viruses; Spamming or fraudulent activity. Violation may result in termination of access and legal action.",
-    ipTitle: "Intellectual Property",
-    ipDesc:
-      "All content on this website, including logos, images, product designs, text and graphics are the property of Pitch Perfect and are protected under applicable copyright laws. Unauthorized use or reproduction is strictly prohibited.",
-    liabilityTitle: "Limitation of Liability",
-    liabilityDesc:
-      "Pitch Perfect shall not be held liable for any: Direct or indirect damages; Loss of data or profits; Issues arising from the use or inability to use our website or products.",
-    changesTitle: "Changes to This Policy",
+    changesTitle: "9. Changes to This Policy",
     changesDesc:
       "We may update this Privacy Policy from time to time. Changes will be posted on this page with an updated Effective Date.",
-    lawTitle: "Governing Law",
-    lawDesc:
-      "This Privacy Policy is governed by the laws of India. Any disputes shall be subject to the jurisdiction of courts in Virudhunagar, Tamil Nadu, India.",
-    contactTitle: "Contact Us",
+    contactTitle: "10. Contact Us",
     contactDesc:
       "If you have any questions or concerns regarding this Privacy Policy, please contact us:",
     phoneLabel: "Call & WhatsApp",
-    phoneNumber: "+91 73588 48765",
+    phoneNumber: "+91 7492982414",
     emailLabel: "Email Us",
     emailAddress: "support@pitchperfectapk.com",
+    websiteLabel: "Website",
+    websiteUrl: "https://pitchperfectapk.com/contact",
     whatsappCTA: "Chat on WhatsApp",
     addressLabel: "Address",
-    address:
-      "12/4A, Pitch Perfect Turf, Aruppukottai Main Road, Chockalingampuram, Nethaji Road, Aruppukottai, Virudhunagar, Tamil Nadu - 626101",
+    address: "Sanskriti Apartment, Poket gh-1, Rohini Sec-28, Delhi 110042",
     consent:
       "By using our website, you consent to this Privacy Policy and agree to its terms.",
   },
@@ -108,22 +76,12 @@ const sections = [
   { icon: Database, key: "collection" },
   { icon: Share2, key: "usage" },
   { icon: Shield, key: "cookies" },
-  { icon: FileText, key: "products" },
-  { icon: CreditCard, key: "pricing" },
-  { icon: CreditCard, key: "orders" },
-  { icon: CreditCard, key: "payment" },
-  { icon: Truck, key: "shipping" },
-  { icon: Undo, key: "returns" },
   { icon: Lock, key: "security" },
   { icon: Share2, key: "sharing" },
   { icon: User, key: "rights" },
   { icon: Globe, key: "thirdParty" },
-  { icon: AlertTriangle, key: "children" },
-  { icon: AlertTriangle, key: "use" },
-  { icon: Shield, key: "ip" },
-  { icon: AlertTriangle, key: "liability" },
+  { icon: Eye, key: "children" },
   { icon: Clock, key: "changes" },
-  { icon: Scale, key: "law" },
 ];
 
 export default function PrivacyPage() {
@@ -148,7 +106,7 @@ export default function PrivacyPage() {
         transition={{ duration: 0.4, delay: 0.1 }}
       >
         <Card className="p-6">
-          <p className="text-muted-foreground text-sm leading-relaxed">
+          <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-line">
             {s.en.intro}
           </p>
         </Card>
@@ -156,6 +114,12 @@ export default function PrivacyPage() {
 
       {sections.map((section, index) => {
         const sectionKey = section.key as keyof typeof s.en;
+        let desc = (s.en as any)[
+          `${sectionKey}Desc` as keyof typeof s.en
+        ] as string;
+        if (section.key === "cookies") {
+          desc = s.en.usageDesc2;
+        }
         return (
           <motion.div
             key={section.key}
@@ -172,8 +136,8 @@ export default function PrivacyPage() {
                   <h3 className="font-semibold">
                     {(s.en as any)[`${sectionKey}Title` as keyof typeof s.en]}
                   </h3>
-                  <p className="text-muted-foreground mt-1 text-sm whitespace-pre-line">
-                    {(s.en as any)[`${sectionKey}Desc` as keyof typeof s.en]}
+                  <p className="text-muted-foreground mt-2 text-sm whitespace-pre-line">
+                    {desc}
                   </p>
                 </div>
               </div>
@@ -214,6 +178,23 @@ export default function PrivacyPage() {
                 className="text-muted-foreground hover:text-primary mt-1 block text-sm"
               >
                 {s.en.emailAddress}
+              </Link>
+            </div>
+          </div>
+
+          <div className="mb-4 flex items-start gap-3">
+            <div className="bg-primary/10 text-primary flex h-10 w-10 shrink-0 items-center justify-center rounded-full">
+              <Globe className="h-5 w-5" />
+            </div>
+            <div>
+              <h3 className="font-semibold">{s.en.websiteLabel}</h3>
+              <Link
+                href={s.en.websiteUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="text-muted-foreground hover:text-primary mt-1 block text-sm"
+              >
+                {s.en.websiteUrl}
               </Link>
             </div>
           </div>

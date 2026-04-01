@@ -14,7 +14,6 @@ import {
   Package,
   Tag,
   ShoppingCart,
-  Truck,
   Undo,
   AlertTriangle,
   Globe,
@@ -47,9 +46,6 @@ const s = {
     paymentTitle: "Payment",
     paymentDesc:
       "We accept multiple payment methods including: Credit/Debit Cards, UPI, Net Banking, Cash on Delivery (COD) (if available). Additional charges may apply for COD orders.",
-    shippingTitle: "Shipping",
-    shippingDesc:
-      "We offer shipping across India. Estimated delivery timelines are mentioned on product pages but may vary due to:\n• Courier delays\n• Weather conditions\n• Public holidays or unforeseen circumstances.",
     returnsTitle: "Returns and Refunds",
     returnsDesc:
       "We want you to be completely satisfied with our service. Please review our refund policy below:\n\nRefund Processing Time\n• Refunds, once approved, will be processed within 5-7 business days and credited to your original payment method.\n\nNo Refund Conditions\n• No refunds will be provided for cancellations made less than 1 hour before the scheduled slot time\n• No-shows will not be eligible for any refund\n• Cancellations made 1 hour or more before the scheduled slot will be eligible for a full refund\n\nFor any refund requests or disputes, please contact us within 24 hours of your booking time.",
@@ -90,7 +86,6 @@ const sections = [
   { icon: Tag, key: "pricing" },
   { icon: ShoppingCart, key: "orders" },
   { icon: CreditCard, key: "payment" },
-  { icon: Truck, key: "shipping" },
   { icon: Undo, key: "returns" },
   { icon: AlertTriangle, key: "use" },
   { icon: Copyright, key: "ip" },

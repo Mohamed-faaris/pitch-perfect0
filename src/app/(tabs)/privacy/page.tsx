@@ -66,7 +66,7 @@ const s = {
     websiteUrl: "https://pitchperfectapk.com/contact",
     whatsappCTA: "Chat on WhatsApp",
     addressLabel: "Address",
-    address: "Sanskriti Apartment, Poket gh-1, Rohini Sec-28, Delhi 110042",
+    address: "Madurai–Tuticorin Highway, Chockalingampuram, Nethaji Road, Aruppukottai, Virudhunagar, Tamil Nadu – 626101",
     consent:
       "By using our website, you consent to this Privacy Policy and agree to its terms.",
   },

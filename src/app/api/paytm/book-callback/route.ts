@@ -1,27 +1,10 @@
 import { NextResponse } from "next/server";
 
-import { env } from "~/env";
-import { finalizePaymentOrder } from "~/server/booking-payments";
-import { verifyPaytmCallback } from "~/server/paytm";
-
-const redirectToBooking = (orderId: string, payment: "success" | "failed") =>
-  NextResponse.redirect(
-    new URL(
-      `/book?payment=${payment}&orderId=${orderId}`,
-      env.NEXT_PUBLIC_BASE_URL,
-    ),
-  );
-
-const redirectWithState = (
-  orderId: string,
-  payment: "success" | "failed" | "pending" | "cancelled" | "unknown",
-) =>
-  NextResponse.redirect(
-    new URL(
-      `/book?payment=${payment}&orderId=${orderId}`,
-      env.NEXT_PUBLIC_BASE_URL,
-    ),
-  );
+import {
+  failPaymentOrder,
+  recordCallbackSuccess,
+} from "~/server/payments/booking";
+import { verifyPaytmCallback } from "~/server/payments/paytm";
 
 const toRecord = (formData: FormData) => {
   const entries = Array.from(formData.entries());
@@ -29,6 +12,15 @@ const toRecord = (formData: FormData) => {
     entries.map(([key, value]) => [key, String(value)]),
   ) as Record<string, string>;
 };
+
+const redirectToBooking = (
+  request: Request,
+  orderId: string,
+  payment: "success" | "failed" | "pending" | "cancelled" | "unknown",
+) =>
+  NextResponse.redirect(
+    new URL(`/book?payment=${payment}&orderId=${orderId}`, request.url),
+  );
 
 export async function POST(request: Request) {
   const contentType = request.headers.get("content-type") ?? "";
@@ -41,8 +33,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Missing order id" }, { status: 400 });
   }
 
-  const checksumValid = verifyPaytmCallback(payload);
-  if (!checksumValid) {
+  if (!verifyPaytmCallback(payload)) {
     return NextResponse.json({ error: "Invalid checksum" }, { status: 400 });
   }
 
@@ -59,31 +50,31 @@ export async function POST(request: Request) {
     normalizedStatus === "TXN_PENDING";
   const isCancelled =
     normalizedStatus.includes("CANCEL") || normalizedStatus === "TXN_CANCELLED";
-  const paymentState = isSuccess
-    ? "success"
-    : isPending
-      ? "pending"
-      : isCancelled
-        ? "cancelled"
-        : "failed";
 
   try {
-    if (paymentState === "success" || paymentState === "failed") {
-      await finalizePaymentOrder({
+    if (isSuccess) {
+      await recordCallbackSuccess({
         orderId,
-        success: paymentState === "success",
         transactionId,
         paymentStatus: status,
       });
+    } else if (isCancelled || !isPending) {
+      await failPaymentOrder(orderId);
     }
   } catch (error) {
-    console.error("Failed to finalize Paytm payment", error);
-    return redirectWithState(orderId, "failed");
+    console.error("Failed to handle Paytm callback", error);
+    return redirectToBooking(request, orderId, "failed");
   }
 
-  return redirectWithState(orderId, paymentState);
-}
-
-export async function GET() {
-  return NextResponse.redirect(new URL("/book", env.NEXT_PUBLIC_BASE_URL));
+  return redirectToBooking(
+    request,
+    orderId,
+    isSuccess
+      ? "success"
+      : isPending
+        ? "pending"
+        : isCancelled
+          ? "cancelled"
+          : "unknown",
+  );
 }

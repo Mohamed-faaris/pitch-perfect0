@@ -340,7 +340,10 @@ export default function BookingPage() {
         from: booking.timeSlot.from.slice(0, 5),
         to: booking.timeSlot.to.slice(0, 5),
         bookingType: booking.bookingType as any,
-        paymentOption: booking.status === "fullPaid" ? "full" : "advance",
+        paymentOption:
+          booking.status === "fullPending" || booking.status === "fullPaid"
+            ? "full"
+            : "advance",
         amountPaid: booking.amountPaid / 100,
         totalAmount: booking.totalAmount / 100,
         verificationCode: booking.verificationCode,

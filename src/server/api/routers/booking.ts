@@ -16,8 +16,8 @@ import {
   createPaymentOrder,
   getPaymentOrder as fetchPaymentOrder,
   failPaymentOrder,
-} from "~/server/booking-payments";
-import { createPaytmTransaction } from "~/server/paytm";
+} from "~/server/payments/booking";
+import { createPaytmTransaction } from "~/server/payments/paytm";
 import { randomUUID } from "crypto";
 
 export const bookingRouter = createTRPCRouter({

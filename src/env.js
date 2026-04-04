@@ -28,6 +28,11 @@ export const env = createEnv({
       process.env.NODE_ENV === "production"
         ? z.string()
         : z.string().optional(),
+    PAYTM_MID: z.string(),
+    PAYTM_MERCHANT_KEY: z.string(),
+    PAYTM_WEBSITE: z.string(),
+    PAYTM_CALLBACK_URL: z.string(),
+    PAYTM_HOSTNAME: z.string(),
   },
 
   /**
@@ -60,6 +65,11 @@ export const env = createEnv({
     CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY,
     CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
     CRON_SECRET: process.env.CRON_SECRET,
+    PAYTM_MID: process.env.PAYTM_MID,
+    PAYTM_MERCHANT_KEY: process.env.PAYTM_MERCHANT_KEY,
+    PAYTM_WEBSITE: process.env.PAYTM_WEBSITE,
+    PAYTM_CALLBACK_URL: process.env.PAYTM_CALLBACK_URL,
+    PAYTM_HOSTNAME: process.env.PAYTM_HOSTNAME,
     NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL,
     NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,
     NEXT_PUBLIC_POSTHOG_HOST: process.env.NEXT_PUBLIC_POSTHOG_HOST,

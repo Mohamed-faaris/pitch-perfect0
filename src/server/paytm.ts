@@ -50,14 +50,13 @@ export async function createPaytmTransaction(input: {
   orderId: string;
   amountPaise: number;
   customerId: string;
-  callbackUrl: string;
 }) {
   const body = {
     requestType: "Payment",
     mid: env.PAYTM_MID,
     websiteName: env.PAYTM_WEBSITE,
     orderId: input.orderId,
-    callbackUrl: input.callbackUrl,
+    callbackUrl: env.PAYTM_CALLBACK_URL,
     channelId: "WEB",
     txnAmount: {
       value: (input.amountPaise / 100).toFixed(2),
@@ -106,7 +105,7 @@ export async function createPaytmTransaction(input: {
     orderId: input.orderId,
     paymentPageUrl: buildPaytmPaymentPageUrl(input.orderId),
     amount: body.txnAmount.value,
-    callbackUrl: input.callbackUrl,
+    callbackUrl: env.PAYTM_CALLBACK_URL,
     mid: env.PAYTM_MID,
   } satisfies PaytmInitiateResponse;
 }

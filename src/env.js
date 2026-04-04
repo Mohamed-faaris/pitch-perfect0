@@ -28,6 +28,9 @@ export const env = createEnv({
       process.env.NODE_ENV === "production"
         ? z.string()
         : z.string().optional(),
+    PAYTM_MODE: z
+      .enum(["prod", "test"])
+      .default(process.env.NODE_ENV === "production" ? "prod" : "test"),
     PAYTM_MID: z.string(),
     PAYTM_MERCHANT_KEY: z.string(),
     PAYTM_WEBSITE: z.string(),
@@ -65,11 +68,27 @@ export const env = createEnv({
     CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY,
     CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
     CRON_SECRET: process.env.CRON_SECRET,
-    PAYTM_MID: process.env.PAYTM_MID,
-    PAYTM_MERCHANT_KEY: process.env.PAYTM_MERCHANT_KEY,
-    PAYTM_WEBSITE: process.env.PAYTM_WEBSITE,
-    PAYTM_CALLBACK_URL: process.env.PAYTM_CALLBACK_URL,
-    PAYTM_HOSTNAME: process.env.PAYTM_HOSTNAME,
+    PAYTM_MODE: process.env.PAYTM_MODE,
+    PAYTM_MID:
+      process.env.PAYTM_MODE === "prod"
+        ? process.env.PAYTM_MID
+        : process.env.TEST_PAYTM_MID,
+    PAYTM_MERCHANT_KEY:
+      process.env.PAYTM_MODE === "prod"
+        ? process.env.PAYTM_MERCHANT_KEY
+        : process.env.TEST_PAYTM_MERCHANT_KEY,
+    PAYTM_WEBSITE:
+      process.env.PAYTM_MODE === "prod"
+        ? process.env.PAYTM_WEBSITE
+        : process.env.TEST_PAYTM_WEBSITE,
+    PAYTM_CALLBACK_URL:
+      process.env.PAYTM_MODE === "prod"
+        ? process.env.PAYTM_CALLBACK_URL
+        : process.env.TEST_PAYTM_CALLBACK_URL,
+    PAYTM_HOSTNAME:
+      process.env.PAYTM_MODE === "prod"
+        ? process.env.PAYTM_HOSTNAME
+        : process.env.TEST_PAYTM_HOSTNAME,
     NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL,
     NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,
     NEXT_PUBLIC_POSTHOG_HOST: process.env.NEXT_PUBLIC_POSTHOG_HOST,

@@ -18,7 +18,6 @@ import {
   failPaymentOrder,
 } from "~/server/booking-payments";
 import { createPaytmTransaction } from "~/server/paytm";
-import { env } from "~/env";
 import { randomUUID } from "crypto";
 
 export const bookingRouter = createTRPCRouter({
@@ -382,7 +381,6 @@ export const bookingRouter = createTRPCRouter({
           orderId,
           amountPaise: discountData.finalAmount,
           customerId: input.number,
-          callbackUrl: env.PAYTM_CALLBACK_URL,
         });
       } catch (error) {
         await failPaymentOrder(orderId).catch(() => undefined);

@@ -259,29 +259,31 @@ function BookingList({
               <span>{customerName ?? booking.phoneNumber}</span>
               <span className="font-mono">{booking.verificationCode}</span>
             </div>
-            <div className="mt-4 flex items-center gap-2">
-              <MotionButton
-                size="sm"
-                className="flex-1 rounded-xl"
-                onClick={() => onOpenTicket(booking)}
-                whileTap={{ scale: 0.96 }}
-                transition={springy}
-              >
-                {strings.viewTicket}
-              </MotionButton>
-              {onReschedule && (
+            {booking.paymentStatus !== "paymentFailed" && (
+              <div className="mt-4 flex items-center gap-2">
                 <MotionButton
                   size="sm"
-                  variant="outline"
                   className="flex-1 rounded-xl"
-                  onClick={() => onReschedule(booking)}
+                  onClick={() => onOpenTicket(booking)}
                   whileTap={{ scale: 0.96 }}
                   transition={springy}
                 >
-                  {strings.reschedule}
+                  {strings.viewTicket}
                 </MotionButton>
-              )}
-            </div>
+                {onReschedule && (
+                  <MotionButton
+                    size="sm"
+                    variant="outline"
+                    className="flex-1 rounded-xl"
+                    onClick={() => onReschedule(booking)}
+                    whileTap={{ scale: 0.96 }}
+                    transition={springy}
+                  >
+                    {strings.reschedule}
+                  </MotionButton>
+                )}
+              </div>
+            )}
           </MotionCard>
         ))}
       </div>

@@ -319,7 +319,7 @@ export default function BookingPage() {
   useEffect(() => {
     if (paymentStatus !== "failed" && paymentStatus !== "cancelled") return;
     toast.error(strings.bookingFailed);
-    setConfirmation([]);
+    setConfirmation(null);
     setSelectedSlots([]);
     setBookingType(new Set());
     setPaymentOption("");
@@ -723,7 +723,7 @@ export default function BookingPage() {
           : paymentStatus === "failed"
             ? {
                 title: "Payment failed",
-                body: "No booking was completed. Please try again.",
+                body: "No ticket was generated. Please try again.",
                 className: "border-red-500/30 bg-red-500/10 text-red-700",
               }
             : paymentStatus === "unknown"

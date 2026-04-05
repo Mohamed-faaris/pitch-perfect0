@@ -20,6 +20,7 @@ const redirectToBooking = (
 ) =>
   NextResponse.redirect(
     new URL(`/book?payment=${payment}&orderId=${orderId}`, request.url),
+    303,
   );
 
 export async function POST(request: Request) {

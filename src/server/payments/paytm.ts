@@ -64,13 +64,18 @@ export async function createPaytmTransaction(input: {
     callbackUrl: env.PAYTM_CALLBACK_URL,
     channelId: "WEB",
     txnAmount: {
-      value: (input.amountPaise / 100).toFixed(2),
+      value: String((input.amountPaise / 100).toFixed(2)),
       currency: "INR",
     },
     userInfo: {
       custId: input.customerId,
     },
   };
+
+  console.log("[paytm] types:", {
+  custId: typeof input.customerId,
+  value: typeof body.txnAmount.value,
+});
 
   const checksum = await PaytmChecksum.generateSignature(
     JSON.stringify(body),
@@ -82,22 +87,28 @@ export async function createPaytmTransaction(input: {
     head: { signature: checksum },
   });
 
-  const response = await requestJson(
-    {
-      hostname: env.PAYTM_HOSTNAME,
-      port: 443,
-      path: `/theia/api/v1/initiateTransaction?mid=${env.PAYTM_MID}&orderId=${input.orderId}`,
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Content-Length": Buffer.byteLength(postData),
-      },
+  const requestOptions: https.RequestOptions = {
+    hostname: env.PAYTM_HOSTNAME,
+    port: 443,
+    path: `/theia/api/v1/initiateTransaction?mid=${env.PAYTM_MID}&orderId=${input.orderId}`,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Content-Length": Buffer.byteLength(postData),
     },
+  };
+
+  
+  console.log("[paytm] initiating transaction", {
+    requestOptions,
     postData,
-  );
+  });
+
+  const response = await requestJson(requestOptions, postData);
 
   const parsed = parseJson<InitiateTransactionResponse>(response);
   const resultInfo = parsed.body?.resultInfo;
+
 
   if (resultInfo?.resultStatus !== "S" || !parsed.body?.txnToken) {
     throw new Error(

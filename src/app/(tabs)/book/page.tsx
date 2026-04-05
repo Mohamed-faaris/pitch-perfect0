@@ -411,18 +411,36 @@ export default function BookingPage() {
     { enabled: !!storedPhone && totalAmountPaise > 0 && isHydrated },
   );
 
+  const normalizedCouponCode = couponCode.trim().toUpperCase();
+  const selectedCoupon = useMemo(
+    () =>
+      activeCoupons.find(
+        (coupon) => coupon.code.toUpperCase() === normalizedCouponCode,
+      ),
+    [activeCoupons, normalizedCouponCode],
+  );
+  const couponApplyError =
+    selectedCoupon && !selectedCoupon.isEligible
+      ? (selectedCoupon.reason ?? strings.invalidCoupon)
+      : null;
+
   const {
     data: couponValidation,
     refetch: validateCoupon,
     isFetching: isValidatingCoupon,
   } = api.booking.validateCoupon.useQuery(
     {
-      couponCode: couponCode.toUpperCase(),
+      couponCode: normalizedCouponCode,
       bookingCount: bookingCountForCoupons,
       totalAmount: totalAmountPaise,
     },
     { enabled: false },
   );
+  const couponValidationError =
+    couponValidation && !couponValidation.isValid
+      ? couponValidation.message
+      : null;
+  const couponErrorMessage = couponApplyError ?? couponValidationError;
 
   // Pre-fill customer form when existing customer data is loaded
   useEffect(() => {
@@ -553,6 +571,11 @@ export default function BookingPage() {
   const handleApplyCoupon = async () => {
     if (!couponCode || totalAmountPaise <= 0) {
       toast.error("Select slots and enter a coupon code");
+      return;
+    }
+
+    if (couponApplyError) {
+      toast.error(couponApplyError);
       return;
     }
 
@@ -1220,14 +1243,19 @@ export default function BookingPage() {
             {!appliedCoupon && (
               <Button
                 type="button"
+                variant={couponApplyError ? "destructive" : "default"}
                 onClick={handleApplyCoupon}
-                disabled={isValidatingCoupon || selectedSlots.length === 0}
+                disabled={
+                  isValidatingCoupon ||
+                  selectedSlots.length === 0 ||
+                  !!couponApplyError
+                }
                 className="shrink-0 rounded-2xl"
               >
                 {isValidatingCoupon ? (
                   <Spinner className="h-4 w-4" />
                 ) : (
-                  strings.apply
+                  (couponApplyError ?? strings.apply)
                 )}
               </Button>
             )}
@@ -1265,9 +1293,9 @@ export default function BookingPage() {
           )}
 
           {/* Validation Error */}
-          {couponValidation && !couponValidation.isValid && couponCode && (
+          {couponCode && couponErrorMessage && (
             <div className="dark:border-destructive/60 dark:bg-destructive/10 dark:text-destructive rounded-2xl border border-red-200 bg-red-50 p-2 text-xs text-red-700">
-              {couponValidation.message}
+              {couponErrorMessage}
             </div>
           )}
         </div>

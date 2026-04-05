@@ -42,6 +42,23 @@ function getPaymentLabel(status: string, strings: any): string {
   }
 }
 
+function getPaymentBadgeClass(status: string): string {
+  switch (status) {
+    case "fullPaid":
+    case "advancePaid":
+      return "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400";
+    case "fullPending":
+    case "advancePending":
+      return "bg-amber-500/10 text-amber-600 dark:text-amber-400";
+    case "paymentFailed":
+      return "bg-destructive/10 text-destructive";
+    case "wontCome":
+      return "bg-muted text-muted-foreground";
+    default:
+      return "bg-primary/10 text-primary";
+  }
+}
+
 function getDotColor(booking: {
   slot?: { from?: string; to?: string; date?: string } | null;
 }): string {
@@ -324,7 +341,9 @@ export default function BookingsPage() {
                                   {booking.phoneNumber}
                                 </p>
                               </div>
-                              <span className="bg-primary/10 text-primary rounded-full px-3 py-1 text-xs font-semibold">
+                              <span
+                                className={`${getPaymentBadgeClass(booking.status)} rounded-full px-3 py-1 text-xs font-semibold`}
+                              >
                                 {getPaymentLabel(booking.status, strings)}
                               </span>
                             </div>
@@ -418,7 +437,9 @@ export default function BookingsPage() {
                                       {booking.phoneNumber}
                                     </p>
                                   </div>
-                                  <span className="bg-primary/10 text-primary rounded-full px-3 py-1 text-xs font-semibold">
+                                  <span
+                                    className={`${getPaymentBadgeClass(booking.status)} rounded-full px-3 py-1 text-xs font-semibold`}
+                                  >
                                     {getPaymentLabel(booking.status, strings)}
                                   </span>
                                 </div>
@@ -602,7 +623,8 @@ export default function BookingsPage() {
                         </p>
                       </div>
                       <div className="mt-1 space-y-0.5">
-                        {typeof activeBooking.amountPaid === "number" && (
+                        {activeBooking.status !== "paymentFailed" &&
+                          typeof activeBooking.amountPaid === "number" && (
                           <p className="text-sm">
                             {strings.paid}: ₹
                             {(activeBooking.amountPaid / 100).toLocaleString(
@@ -616,6 +638,16 @@ export default function BookingsPage() {
                             {(bookingTotalAmount / 100).toLocaleString("en-IN")}
                           </p>
                         )}
+                      </div>
+                      <div className="pt-2">
+                        <p className="text-muted-foreground text-xs tracking-wide uppercase">
+                          {strings.paymentStatus}
+                        </p>
+                        <span
+                          className={`${getPaymentBadgeClass(activeBooking.status)} mt-1 inline-flex rounded-full px-3 py-1 text-xs font-semibold`}
+                        >
+                          {getPaymentLabel(activeBooking.status, strings)}
+                        </span>
                       </div>
                     </div>
                   </div>

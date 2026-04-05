@@ -106,6 +106,8 @@ export async function createPaytmTransaction(input: {
 
   const response = await requestJson(requestOptions, postData);
 
+  console.log("[paytm] initiate transaction response", { response });
+
   const parsed = parseJson<InitiateTransactionResponse>(response);
   const resultInfo = parsed.body?.resultInfo;
 

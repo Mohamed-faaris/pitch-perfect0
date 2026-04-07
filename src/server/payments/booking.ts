@@ -4,6 +4,7 @@ import { TRPCError } from "@trpc/server";
 import { db } from "~/server/db";
 import { bookings, coupons, customers, timeSlots } from "~/server/db/schema";
 import { sendBookingConfirmation } from "~/server/email";
+import { sendPaymentSuccessNotification } from "~/server/notifications/ntfy";
 import {
   createSlotFromConfig,
   validateSlotAgainstConfig,
@@ -510,11 +511,11 @@ export async function finalizePaymentOrder(input: {
     where: eq(customers.number, existing[0]!.phoneNumber),
   });
 
-  if (customer?.email) {
-    const bookingSummary = await getBookingSummary(input.orderId);
-    const firstBooking = bookingSummary[0];
+  const bookingSummary = await getBookingSummary(input.orderId);
+  const firstBooking = bookingSummary[0];
 
-    if (firstBooking) {
+  if (firstBooking) {
+    if (customer?.email) {
       await sendBookingConfirmation(customer.email, {
         customerName: customer.name ?? "Customer",
         bookingIds: bookingSummary.map((booking) => booking.id),
@@ -534,6 +535,31 @@ export async function finalizePaymentOrder(input: {
         console.error("Failed to send payment confirmation email:", error),
       );
     }
+
+    await sendPaymentSuccessNotification({
+      orderId: input.orderId,
+      transactionId: input.transactionId,
+      paymentStatus: input.paymentStatus,
+      customer: {
+        name: customer?.name ?? "Customer",
+        number: customer?.number ?? firstBooking.phoneNumber,
+        email: customer?.email,
+      },
+      bookingType: firstBooking.bookingType,
+      paymentType: firstBooking.status === "fullPaid" ? "full" : "advance",
+      totalAmount: firstBooking.totalAmount,
+      amountPaid: bookingSummary.reduce((sum, booking) => sum + booking.amountPaid, 0),
+      verificationCode: firstBooking.verificationCode,
+      bookings: bookingSummary.map((booking) => ({
+        id: booking.id,
+        amountPaid: booking.amountPaid,
+        totalAmount: booking.totalAmount,
+        status: booking.status,
+        timeSlot: booking.timeSlot,
+      })),
+    }).catch((error) =>
+      console.error("Failed to send payment success notification:", error),
+    );
   }
 
   return { orderId: input.orderId, success: true };

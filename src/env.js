@@ -24,6 +24,7 @@ export const env = createEnv({
     CLOUDINARY_CLOUD_NAME: z.string(),
     CLOUDINARY_API_KEY: z.string(),
     CLOUDINARY_API_SECRET: z.string(),
+    NTFY_TOPIC:z.string(),
     CRON_SECRET:
       process.env.NODE_ENV === "production"
         ? z.string()
@@ -67,6 +68,7 @@ export const env = createEnv({
     CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME,
     CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY,
     CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
+    NTFY_TOPIC: process.env.NTFY_TOPIC,
     CRON_SECRET: process.env.CRON_SECRET,
     PAYTM_MODE: process.env.PAYTM_MODE,
     PAYTM_MID:

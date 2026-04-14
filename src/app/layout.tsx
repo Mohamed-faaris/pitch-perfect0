@@ -1,6 +1,6 @@
 import "~/styles/globals.css";
 
-import { type Metadata, type Viewport } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Poppins } from "next/font/google";
 
 import { TRPCReactProvider } from "~/trpc/react";

@@ -15,6 +15,7 @@ import {
 import { cn } from "~/lib/utils";
 import { useLanguage } from "~/lib/language-context";
 import allTranslations from "~/lib/translations/all";
+import { WhatsAppIcon } from "~/components/ui/whatsapp-icon";
 
 type NavItem = {
   labelKey: keyof typeof allTranslations.nav.en;
@@ -51,22 +52,19 @@ export function BottomNav() {
   const { language } = useLanguage();
   const strings = useMemo(() => allTranslations.nav[language], [language]);
 
-  const hideButton =
-    pathname.startsWith("/book") || pathname.startsWith("/cafe-menu");
-
   return (
     <nav className="border-border/60 bg-background/90 fixed right-0 bottom-0 left-0 z-50 border-t backdrop-blur-lg">
       <div className="relative mx-auto flex max-w-md justify-between px-6 py-3 text-xs font-medium tracking-wide uppercase">
-        {!hideButton && (
-          <div className="absolute -top-16 right-4">
-            <Link
-              href="/cafe-menu"
-              className="bg-primary hover:bg-primary/90 flex h-12 w-12 items-center justify-center rounded-full shadow-lg transition-colors"
-            >
-              <Coffee className="text-primary-foreground h-6 w-6" />
-            </Link>
-          </div>
-        )}
+        <div className="absolute -top-16 right-4">
+          <a
+            href="https://wa.me/917358848765?text=Hi%20Pitch%20Perfect%2C%20I%20need%20help%20with%20a%20booking."
+            target="_blank"
+            rel="noreferrer"
+            className="flex h-12 w-12 items-center justify-center rounded-full bg-green-500 shadow-lg transition-colors hover:bg-green-600"
+          >
+            <WhatsAppIcon className="h-6 w-6 text-white" />
+          </a>
+        </div>
 
         {navItems.map((item) => {
           const isActive = pathname.startsWith(item.href);

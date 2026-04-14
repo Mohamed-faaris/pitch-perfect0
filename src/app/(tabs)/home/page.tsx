@@ -6,6 +6,7 @@ import { useMemo } from "react";
 import { ArrowUpRight, Calendar, HelpCircle, Ticket } from "lucide-react";
 import { motion } from "motion/react";
 import { Card } from "~/components/ui/card";
+import { CafeBanner } from "~/components/cafe-banner";
 //import Carousel from "~/components/ui/carousel";
 import { Carousel } from "~/components/ui/carousel";
 import { useLanguage } from "~/lib/language-context";
@@ -53,9 +54,21 @@ export default function HomePage() {
     }
     // Fallback to highlights if no banner items
     return [
-      { id: "h1", src: "/highlights/2-apurkotai-turf-highlights.jpeg", alt: "Aerial View" },
-      { id: "h2", src: "/highlights/3-apurkotai-turf-highlights.jpeg", alt: "Night Match" },
-      { id: "h3", src: "/highlights/4-apurkotai-turf-highlights.jpeg", alt: "Day Match" },
+      {
+        id: "h1",
+        src: "/highlights/2-apurkotai-turf-highlights.jpeg",
+        alt: "Aerial View",
+      },
+      {
+        id: "h2",
+        src: "/highlights/3-apurkotai-turf-highlights.jpeg",
+        alt: "Night Match",
+      },
+      {
+        id: "h3",
+        src: "/highlights/4-apurkotai-turf-highlights.jpeg",
+        alt: "Day Match",
+      },
     ];
   }, [bannerItems]);
   const quickActions = [
@@ -87,48 +100,49 @@ export default function HomePage() {
       {slides.length > 0 ? (
         <Carousel slides={slides} autoPlayInterval={4000} />
       ) : null}
-
-      <div className="grid grid-cols-2 items-stretch gap-3">
-        {quickActions.map(({ key, href, label, desc, Icon, cardGlow }) => (
-          <motion.div
-            key={key}
-            className="h-full"
-            whileHover={{ y: -4 }}
-            transition={{ type: "spring", stiffness: 260, damping: 20 }}
-          >
-            <Link href={href} className="block h-full">
-              <Card
-                className={`group border-border/60 shadow-primary/5 relative h-full overflow-hidden rounded-2xl border p-4 shadow-lg transition-all duration-300`}
-              >
-                <div
-                  className={`absolute inset-0 ${cardGlow} opacity-0 blur-3xl transition-opacity duration-300 group-hover:opacity-60`}
-                />
-                <div className="relative z-10 flex h-full items-center gap-3">
-                  <span className="bg-background/70 text-foreground/80 group-hover:text-primary border-border/40 flex h-12 w-12 items-center justify-center rounded-2xl border transition-colors">
-                    <Icon className="h-5 w-5" aria-hidden="true" />
-                  </span>
-                  <div className="flex-1">
-                    <p className="text-foreground text-base font-semibold">
-                      {label}
-                    </p>
-                    <p className="text-muted-foreground text-xs">{desc}</p>
-                  </div>
-                  <ArrowUpRight
-                    className="text-muted-foreground group-hover:text-primary h-4 w-4 transition-colors"
-                    aria-hidden="true"
+      <div>
+        <div className="grid grid-cols-2 items-stretch gap-3">
+          {quickActions.map(({ key, href, label, desc, Icon, cardGlow }) => (
+            <motion.div
+              key={key}
+              className="h-full"
+              whileHover={{ y: -4 }}
+              transition={{ type: "spring", stiffness: 260, damping: 20 }}
+            >
+              <Link href={href} className="block h-full">
+                <Card
+                  className={`group border-border/60 shadow-primary/5 relative h-full overflow-hidden rounded-2xl border p-4 shadow-lg transition-all duration-300`}
+                >
+                  <div
+                    className={`absolute inset-0 ${cardGlow} opacity-0 blur-3xl transition-opacity duration-300 group-hover:opacity-60`}
                   />
-                </div>
-              </Card>
-            </Link>
-          </motion.div>
-        ))}
+                  <div className="relative z-10 flex h-full items-center gap-3">
+                    <span className="bg-background/70 text-foreground/80 group-hover:text-primary border-border/40 flex h-12 w-12 items-center justify-center rounded-2xl border transition-colors">
+                      <Icon className="h-5 w-5" aria-hidden="true" />
+                    </span>
+                    <div className="flex-1">
+                      <p className="text-foreground text-base font-semibold">
+                        {label}
+                      </p>
+                      <p className="text-muted-foreground text-xs">{desc}</p>
+                    </div>
+                    <ArrowUpRight
+                      className="text-muted-foreground group-hover:text-primary h-4 w-4 transition-colors"
+                      aria-hidden="true"
+                    />
+                  </div>
+                </Card>
+              </Link>
+            </motion.div>
+          ))}
+        </div>
+        <CafeBanner />
       </div>
 
       <section className="space-y-3">
         <h2 className="text-lg font-semibold">{strings.locationTitle}</h2>
         <LocationWidget />
       </section>
-
       <section className="space-y-3">
         <h2 className="text-lg font-semibold">{strings.highlightsTitle}</h2>
         <div className="grid grid-cols-2 gap-3">
@@ -149,7 +163,6 @@ export default function HomePage() {
           ))}
         </div>
       </section>
-
       <section className="space-y-3">
         <Link href="/instructions" className="block">
           <motion.div

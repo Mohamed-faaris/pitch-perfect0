@@ -18,6 +18,7 @@ import {
 
 import { LocationWidget } from "~/components/location-widget";
 import { FooterBranding } from "~/components/footer-branding";
+import { CafeBanner } from "~/components/cafe-banner";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { WhatsAppIcon } from "~/components/ui/whatsapp-icon";
@@ -135,6 +136,8 @@ export function LandingPageClient({
                 </Link>
               </Button>
             </div>
+
+            <CafeBanner />
 
             <Card className="border-border/60 overflow-hidden rounded-2xl p-0">
               <div className="relative h-36 w-full">

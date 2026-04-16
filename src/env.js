@@ -49,6 +49,7 @@ export const env = createEnv({
     NEXT_PUBLIC_BASE_URL: z.string(),
     NEXT_PUBLIC_POSTHOG_KEY: z.string(),
     NEXT_PUBLIC_POSTHOG_HOST: z.string(),
+    NEXT_PUBLIC_SUPPORTED_BASE_URLS: z.string(),
   },
 
   /**
@@ -92,6 +93,7 @@ export const env = createEnv({
         ? process.env.PAYTM_HOSTNAME
         : process.env.TEST_PAYTM_HOSTNAME,
     NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL,
+    NEXT_PUBLIC_SUPPORTED_BASE_URLS: process.env.NEXT_PUBLIC_SUPPORTED_BASE_URLS,
     NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,
     NEXT_PUBLIC_POSTHOG_HOST: process.env.NEXT_PUBLIC_POSTHOG_HOST,
   },

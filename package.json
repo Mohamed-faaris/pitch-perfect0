@@ -18,7 +18,8 @@
     "preview": "bun run --bun next build && bun run --bun next start",
     "start": "bun run --bun next start",
     "typecheck": "tsc --noEmit",
-    "db:seed:super-admin": "pnpm tsx scripts/seed-super-admin.ts"
+    "db:seed:super-admin": "pnpm tsx scripts/seed-super-admin.ts",
+    "db:seed:admin": "pnpm tsx scripts/seed-admins.ts"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.11.2",
@@ -36,7 +37,7 @@
     "@trpc/react-query": "^11.16.0",
     "@trpc/server": "^11.16.0",
     "@types/canvas-confetti": "^1.9.0",
-    "better-auth": "^1.6.4",
+    "better-auth": "^1.6.5",
     "canvas-confetti": "^1.9.4",
     "class-variance-authority": "^0.7.1",
     "cloudinary": "^2.9.0",
@@ -54,7 +55,7 @@
     "nodemailer": "^7.0.13",
     "paytmchecksum": "^1.5.1",
     "postgres": "^3.4.9",
-    "posthog-js": "^1.369.0",
+    "posthog-js": "^1.369.1",
     "posthog-node": "^5.29.2",
     "qrcode.react": "^4.2.0",
     "react": "^19.2.5",
@@ -83,7 +84,7 @@
     "eslint": "^9.39.4",
     "eslint-config-next": "^15.5.15",
     "eslint-plugin-drizzle": "^0.2.3",
-    "postcss": "^8.5.9",
+    "postcss": "^8.5.10",
     "prettier": "^3.8.3",
     "prettier-plugin-tailwindcss": "^0.6.14",
     "tailwindcss": "^4.2.2",

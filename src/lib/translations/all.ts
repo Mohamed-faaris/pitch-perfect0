@@ -13,6 +13,7 @@ export const allTranslations = {
       cafeMenu: "Cafe Menu",
       cafeMenuDesc: "Grab a bite at OK Kanmani",
       cafeMenuTap: "Tap to open menu",
+      cafeDeliveryNote: "Also available on Swiggy and Zomato",
       instructionsTitle: "How to Book",
       instructionsDesc:
         "Learn the simple steps to book your perfect turf session",
@@ -34,6 +35,7 @@ export const allTranslations = {
       cafeMenu: "உணவகப் பட்டியல்",
       cafeMenuDesc: "ஓகே கண்மணியில் உணவருந்துங்கள்",
       cafeMenuTap: "திறக்கத் தட்டவும்",
+      cafeDeliveryNote: "Swiggy மற்றும் Zomato-யிலும் கிடைக்கும்",
       instructionsTitle: "முன்பதிவு செய்வது எப்படி?",
       instructionsDesc:
         "உங்கள் சரியான விளையாட்டு நேரத்தை முன்பதிவு செய்வதற்கான எளிய வழிமுறைகள்",

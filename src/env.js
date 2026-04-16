@@ -17,14 +17,11 @@ export const env = createEnv({
       .enum(["development", "test", "production"])
       .default("development"),
     EMAIL_FROM: z.string(),
-    SMTP_USER: z.string(),
-    SMTP_PASS: z.string(),
-    SMTP_HOST: z.string(),
-    SMTP_PORT: z.coerce.number(),
+    RESEND_API_KEY: z.string(),
     CLOUDINARY_CLOUD_NAME: z.string(),
     CLOUDINARY_API_KEY: z.string(),
     CLOUDINARY_API_SECRET: z.string(),
-    NTFY_TOPIC:z.string(),
+    NTFY_TOPIC: z.string(),
     CRON_SECRET:
       process.env.NODE_ENV === "production"
         ? z.string()
@@ -62,10 +59,7 @@ export const env = createEnv({
     DATABASE_URL: process.env.DATABASE_URL,
     NODE_ENV: process.env.NODE_ENV,
     EMAIL_FROM: process.env.EMAIL_FROM,
-    SMTP_USER: process.env.SMTP_USER,
-    SMTP_PASS: process.env.SMTP_PASS,
-    SMTP_HOST: process.env.SMTP_HOST,
-    SMTP_PORT: process.env.SMTP_PORT,
+    RESEND_API_KEY: process.env.RESEND_API_KEY,
     CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME,
     CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY,
     CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
@@ -93,7 +87,8 @@ export const env = createEnv({
         ? process.env.PAYTM_HOSTNAME
         : process.env.TEST_PAYTM_HOSTNAME,
     NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL,
-    NEXT_PUBLIC_SUPPORTED_BASE_URLS: process.env.NEXT_PUBLIC_SUPPORTED_BASE_URLS,
+    NEXT_PUBLIC_SUPPORTED_BASE_URLS:
+      process.env.NEXT_PUBLIC_SUPPORTED_BASE_URLS,
     NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,
     NEXT_PUBLIC_POSTHOG_HOST: process.env.NEXT_PUBLIC_POSTHOG_HOST,
   },

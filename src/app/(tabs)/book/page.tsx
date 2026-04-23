@@ -36,7 +36,7 @@ type SlotView = {
   date: string;
   from: string;
   to: string;
-  status: "available" | "booked" | "unavailable";
+  status: "available" | "booked" | "unavailable" | "bookingInProgress";
   fullAmount: number;
   advanceAmount: number;
 };
@@ -126,8 +126,8 @@ const fireSideCannons = () => {
 };
 
 function useSlotBoard(selectedDate: string) {
-  const { data, isLoading } = api.timeSlot.getAllAvailable.useQuery(
-    { date: selectedDate, days: 1 },
+  const { data, isLoading } = api.timeSlot.getAllByDate.useQuery(
+    { date: selectedDate },
     { enabled: !!selectedDate, staleTime: 60_000 },
   );
 
@@ -143,7 +143,7 @@ function useSlotBoard(selectedDate: string) {
           date: slot.date,
           from: slot.from.slice(0, 5),
           to: slot.to.slice(0, 5),
-          status: "available",
+          status: slot.status,
           fullAmount: slot.fullAmount,
           advanceAmount: slot.advanceAmount,
         }) satisfies SlotView,
@@ -505,7 +505,7 @@ export default function BookingPage() {
   };
 
   const toggleSlotSelection = (slot: SlotView) => {
-    if (slot.date !== selectedDate) return;
+    if (slot.date !== selectedDate || slot.status !== "available") return;
     setSelectedSlots((prev) => {
       const exists = prev.some(
         (item) =>
@@ -682,10 +682,7 @@ export default function BookingPage() {
       form.submit();
 
       // Invalidate queries to refresh data
-      await utils.timeSlot.getAllAvailable.invalidate({
-        date: selectedDate,
-        days: 1,
-      });
+      await utils.timeSlot.getAllByDate.invalidate({ date: selectedDate });
       await utils.booking.getByNumber.invalidate({ number: customer.number });
     } catch (error) {
       console.error("Booking failed:", error);
@@ -917,20 +914,23 @@ export default function BookingPage() {
                       item.from === slot.from &&
                       item.to === slot.to,
                   );
+                  const isUnavailable = slot.status !== "available";
                   const isAtLimit =
                     !isSelected && selectionCount >= MAX_SLOTS_PER_DAY;
-                  const isDisabled = isAtLimit;
+                  const isDisabled = isUnavailable || isAtLimit;
                   return (
                     <motion.button
-                      key={slot.id}
+                      key={`${slot.date}-${slot.from}-${slot.to}-${slot.id ?? "virtual"}`}
                       type="button"
                       disabled={isDisabled}
                       onClick={() => toggleSlotSelection(slot)}
                       className={cn(
                         "flex flex-col rounded-2xl border px-3 py-3 text-left text-sm transition-all",
-                        "hover:border-primary",
+                        !isUnavailable && "hover:border-primary",
                         isSelected &&
                           "border-primary bg-primary/10 text-primary shadow-sm",
+                        isUnavailable &&
+                          "border-border bg-muted/60 text-muted-foreground opacity-75",
                         isAtLimit && !isSelected && "opacity-60",
                       )}
                       layout
@@ -947,6 +947,10 @@ export default function BookingPage() {
                       <span className="text-muted-foreground mt-2 inline-flex items-center gap-2 text-xs">
                         {isSelected
                           ? strings.selected
+                          : isUnavailable
+                            ? slot.status === "booked"
+                              ? strings.booked
+                              : strings.unavailable
                           : isAtLimit
                             ? strings.slotLimitReached
                             : strings.tapToSelect}
@@ -987,7 +991,7 @@ export default function BookingPage() {
                 .sort((a, b) => a.from.localeCompare(b.from))
                 .map((slot) => (
                   <motion.span
-                    key={slot.id}
+                    key={`${slot.date}-${slot.from}-${slot.to}-${slot.id ?? "selected"}`}
                     className="border-primary/30 bg-primary/10 text-primary rounded-full border px-3 py-1 text-xs font-medium"
                     layout
                     initial={{ opacity: 0, scale: 0.9 }}

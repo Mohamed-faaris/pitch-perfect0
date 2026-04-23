@@ -126,8 +126,8 @@ const fireSideCannons = () => {
 };
 
 function useSlotBoard(selectedDate: string) {
-  const { data, isLoading } = api.timeSlot.getAllByDate.useQuery(
-    { date: selectedDate },
+  const { data, isLoading } = api.timeSlot.getAllAvailable.useQuery(
+    { date: selectedDate, days: 1 },
     { enabled: !!selectedDate, staleTime: 60_000 },
   );
 
@@ -136,20 +136,18 @@ function useSlotBoard(selectedDate: string) {
       return [];
     }
 
-    return data
-      .filter((slot) => slot.status === "available")
-      .map(
-        (slot) =>
-          ({
-            id: (slot as { id?: number }).id,
-            date: slot.date,
-            from: slot.from.slice(0, 5),
-            to: slot.to.slice(0, 5),
-            status: "available",
-            fullAmount: slot.fullAmount,
-            advanceAmount: slot.advanceAmount,
-          }) satisfies SlotView,
-      );
+    return data.map(
+      (slot) =>
+        ({
+          id: (slot as { id?: number }).id,
+          date: slot.date,
+          from: slot.from.slice(0, 5),
+          to: slot.to.slice(0, 5),
+          status: "available",
+          fullAmount: slot.fullAmount,
+          advanceAmount: slot.advanceAmount,
+        }) satisfies SlotView,
+    );
   }, [data]);
 
   return { slots, isLoading };
@@ -684,7 +682,10 @@ export default function BookingPage() {
       form.submit();
 
       // Invalidate queries to refresh data
-      await utils.timeSlot.getAllByDate.invalidate({ date: selectedDate });
+      await utils.timeSlot.getAllAvailable.invalidate({
+        date: selectedDate,
+        days: 1,
+      });
       await utils.booking.getByNumber.invalidate({ number: customer.number });
     } catch (error) {
       console.error("Booking failed:", error);

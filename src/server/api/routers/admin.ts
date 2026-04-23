@@ -28,7 +28,12 @@ import {
 } from "~/server/db/schema";
 import { sendAdminInvitationEmail } from "~/server/email";
 import { auth } from "~/server/better-auth";
-import { createSlotFromConfig, generateVirtualSlots } from "~/lib/slot-utils";
+import {
+  createSlotFromConfig,
+  generateVirtualSlots,
+  isPastTime,
+  validateSlotAgainstConfig,
+} from "~/lib/slot-utils";
 
 const managerProcedure = protectedProcedure.use(async ({ ctx, next }) => {
   const manager = await db.query.managers.findFirst({
@@ -185,6 +190,130 @@ export const adminRouter = createTRPCRouter({
       }
 
       return updated;
+    }),
+
+  deleteBooking: managerProcedure
+    .input(z.object({ bookingId: z.string().uuid() }))
+    .mutation(async ({ input }) => {
+      const booking = await db.query.bookings.findFirst({
+        where: eq(bookings.id, input.bookingId),
+      });
+
+      if (!booking) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Booking not found",
+        });
+      }
+
+      if (booking.timeSlotId) {
+        await db
+          .update(timeSlots)
+          .set({ status: "available" })
+          .where(eq(timeSlots.id, booking.timeSlotId));
+      }
+
+      await db.delete(bookings).where(eq(bookings.id, input.bookingId));
+
+      return { success: true };
+    }),
+
+  rescheduleBooking: managerProcedure
+    .input(
+      z.object({
+        bookingId: z.string().uuid(),
+        date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        from: z.string().regex(/^\d{2}:\d{2}:\d{2}$/),
+        to: z.string().regex(/^\d{2}:\d{2}:\d{2}$/),
+      }),
+    )
+    .mutation(async ({ input }) => {
+      const booking = await db.query.bookings.findFirst({
+        where: eq(bookings.id, input.bookingId),
+      });
+
+      if (!booking) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Booking not found",
+        });
+      }
+
+      if (isPastTime(input.date, input.from)) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Cannot reschedule to a past time",
+        });
+      }
+
+      const config = await db.query.configTable.findFirst();
+      if (!config?.slots) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Slot configuration not found",
+        });
+      }
+
+      if (!validateSlotAgainstConfig(input.date, input.from, input.to, config.slots)) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Selected time slot is not valid according to configuration",
+        });
+      }
+
+      const existingSlot = await db.query.timeSlots.findFirst({
+        where: and(
+          eq(timeSlots.date, input.date),
+          eq(timeSlots.from, input.from),
+          eq(timeSlots.to, input.to),
+        ),
+      });
+
+      if (existingSlot && existingSlot.status !== "available") {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "Selected time slot is already booked or unavailable",
+        });
+      }
+
+      const slotToUse = createSlotFromConfig(input.date, input.from, input.to, config.slots);
+
+      const [upsertedSlot] = await db
+        .insert(timeSlots)
+        .values({
+          ...slotToUse,
+          status: "booked",
+        })
+        .onConflictDoUpdate({
+          target: [timeSlots.date, timeSlots.from, timeSlots.to],
+          set: { status: "booked" },
+        })
+        .returning();
+
+      if (!upsertedSlot) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to create or update time slot",
+        });
+      }
+
+      const oldTimeSlotId = booking.timeSlotId;
+      await db
+        .update(bookings)
+        .set({
+          timeSlotId: upsertedSlot.id,
+          updatedAt: new Date(),
+        })
+        .where(eq(bookings.id, input.bookingId));
+
+      if (oldTimeSlotId) {
+        await db
+          .update(timeSlots)
+          .set({ status: "available" })
+          .where(eq(timeSlots.id, oldTimeSlotId));
+      }
+
+      return { success: true };
     }),
 
   staffList: managerProcedure.query(async () => {

@@ -1,15 +1,20 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useLanguage } from "~/lib/language-context";
-import allTranslations from "~/lib/translations/all";
 import { Card } from "~/components/ui/card";
 import { Spinner } from "~/components/spinner";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { format, parseISO, parse, isAfter, isBefore } from "date-fns";
-import { enIN, ta } from "date-fns/locale";
+import { enIN } from "date-fns/locale";
 import { formatSlotTime } from "~/lib/utils";
-import { Phone, RotateCw, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Phone,
+  RotateCw,
+  ChevronLeft,
+  ChevronRight,
+  PencilLine,
+  Trash2,
+} from "lucide-react";
 import {
   Drawer,
   DrawerContent,
@@ -19,24 +24,75 @@ import {
   DrawerFooter,
   DrawerCloseButton,
 } from "~/components/ui/drawer";
+import { useToast } from "~/hooks/use-toast";
 
 type BookingListItem = RouterOutputs["admin"]["bookingsList"][number];
 type BookingDetail = RouterOutputs["admin"]["bookingDetails"];
 
-function getPaymentLabel(status: string, strings: any): string {
+type BookingStrings = {
+  bookingsTitle: string;
+  bookingsDesc: string;
+  refreshBookings: string;
+  current: string;
+  past: string;
+  errorLoadBookings: string;
+  noBookings: string;
+  na: string;
+  verificationCode: string;
+  bookingDetails: string;
+  contactInfo: string;
+  customer: string;
+  alternate: string;
+  callCustomer: string;
+  callAlternateContact: string;
+  email: string;
+  slot: string;
+  cricket: string;
+  football: string;
+  payment: string;
+  paid: string;
+  total: string;
+  paymentStatus: string;
+  updating: string;
+  markFullPaid: string;
+  close: string;
+  deleteBooking: string;
+  rescheduleBooking: string;
+  saveBooking: string;
+  cancel: string;
+  deleteBookingConfirm: string;
+  rescheduleDate: string;
+  rescheduleFrom: string;
+  rescheduleTo: string;
+  invalidBookingSlot: string;
+  bookingDeleted: string;
+  bookingRescheduled: string;
+  bookingNotFound: string;
+  prevMonth: string;
+  nextMonth: string;
+  sun: string;
+  mon: string;
+  tue: string;
+  wed: string;
+  thu: string;
+  fri: string;
+  sat: string;
+};
+
+function getPaymentLabel(status: string): string {
   switch (status) {
     case "advancePaid":
-      return strings.advancePaid;
+      return "Advance Paid";
     case "fullPaid":
-      return strings.fullPaid;
+      return "Full Paid";
     case "advancePending":
-      return strings.advancePending;
+      return "Advance Pending";
     case "fullPending":
-      return strings.fullPending;
+      return "Full Pending";
     case "paymentFailed":
-      return strings.paymentFailed;
+      return "Payment Failed";
     case "wontCome":
-      return strings.wontCome;
+      return "Won't Come";
     default:
       return status;
   }
@@ -93,9 +149,6 @@ function getDotColor(booking: {
 const REFETCH_INTERVAL = 2 * 60 * 1000; // 2 minutes
 
 export default function BookingsPage() {
-  const { language } = useLanguage();
-  const strings = useMemo(() => allTranslations.admin[language], [language]);
-  const locale = language === "ta" ? ta : enIN;
   const [selectedTab, setSelectedTab] = useState<"current" | "past">("current");
   const [selectedBookingId, setSelectedBookingId] = useState<string | null>(
     null,
@@ -105,6 +158,63 @@ export default function BookingsPage() {
   const [selectedCalendarDate, setSelectedCalendarDate] = useState<
     string | null
   >(null);
+  const [rescheduleDate, setRescheduleDate] = useState("");
+  const [rescheduleFrom, setRescheduleFrom] = useState("");
+  const [rescheduleTo, setRescheduleTo] = useState("");
+  const { toast } = useToast();
+  const strings: BookingStrings = useMemo(
+    () => ({
+      bookingsTitle: "Bookings",
+      bookingsDesc: "Manage booking records",
+      refreshBookings: "Refresh bookings",
+      current: "Current",
+      past: "Past",
+      errorLoadBookings: "Failed to load bookings",
+      noBookings: "No bookings found",
+      na: "N/A",
+      verificationCode: "Verification Code",
+      bookingDetails: "Booking Details",
+      contactInfo: "Contact Info",
+      customer: "Customer",
+      alternate: "Alternate Contact",
+      callCustomer: "Call customer",
+      callAlternateContact: "Call alternate contact",
+      email: "Email",
+      slot: "Slot",
+      cricket: "Cricket",
+      football: "Football",
+      payment: "Payment",
+      paid: "Paid",
+      total: "Total",
+      paymentStatus: "Payment Status",
+      updating: "Updating...",
+      markFullPaid: "Mark Full Paid",
+      close: "Close",
+      deleteBooking: "Delete Booking",
+      rescheduleBooking: "Reschedule Booking",
+      saveBooking: "Save Changes",
+      cancel: "Cancel",
+      deleteBookingConfirm: "Delete this booking? This cannot be undone.",
+      rescheduleDate: "Date",
+      rescheduleFrom: "From",
+      rescheduleTo: "To",
+      invalidBookingSlot: "Please enter a valid date and time",
+      bookingDeleted: "Booking deleted",
+      bookingRescheduled: "Booking rescheduled",
+      bookingNotFound: "Booking not found",
+      prevMonth: "Previous month",
+      nextMonth: "Next month",
+      sun: "Sun",
+      mon: "Mon",
+      tue: "Tue",
+      wed: "Wed",
+      thu: "Thu",
+      fri: "Fri",
+      sat: "Sat",
+    }),
+    [],
+  );
+  const locale = enIN;
 
   const now = new Date();
   const currentDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
@@ -177,6 +287,33 @@ export default function BookingsPage() {
     },
   });
 
+  const deleteBooking = api.admin.deleteBooking.useMutation({
+    onSuccess: async () => {
+      await Promise.allSettled([
+        utils.admin.bookingsList.invalidate(),
+        utils.admin.getBookingsByDate.invalidate(),
+        selectedBookingId
+          ? utils.admin.bookingDetails.invalidate({ bookingId: selectedBookingId })
+          : Promise.resolve(),
+      ]);
+      setSelectedBookingId(null);
+      toast({ title: strings.bookingDeleted });
+    },
+  });
+
+  const rescheduleBooking = api.admin.rescheduleBooking.useMutation({
+    onSuccess: async () => {
+      await Promise.allSettled([
+        utils.admin.bookingsList.invalidate(),
+        utils.admin.getBookingsByDate.invalidate(),
+        selectedBookingId
+          ? utils.admin.bookingDetails.invalidate({ bookingId: selectedBookingId })
+          : Promise.resolve(),
+      ]);
+      toast({ title: strings.bookingRescheduled });
+    },
+  });
+
   const activeBooking: BookingDetail | BookingListItem | null = useMemo(() => {
     if (bookingDetailsQuery.data) return bookingDetailsQuery.data;
     if (!selectedBookingId) return null;
@@ -209,6 +346,27 @@ export default function BookingsPage() {
   const isLoading =
     selectedTab === "current" ? isCurrentLoading : isPastLoading;
   const error = selectedTab === "current" ? currentError : null;
+
+  const openBooking = (bookingId: string) => {
+    setSelectedBookingId(bookingId);
+    setRescheduleDate("");
+    setRescheduleFrom("");
+    setRescheduleTo("");
+  };
+
+  const handleReschedule = () => {
+    if (!selectedBookingId || !rescheduleDate || !rescheduleFrom || !rescheduleTo) {
+      toast({ title: strings.invalidBookingSlot });
+      return;
+    }
+
+    rescheduleBooking.mutate({
+      bookingId: selectedBookingId,
+      date: rescheduleDate,
+      from: `${rescheduleFrom}:00`,
+      to: `${rescheduleTo}:00`,
+    });
+  };
 
   return (
     <div className="space-y-6 pb-20">
@@ -322,8 +480,8 @@ export default function BookingsPage() {
                             className={`${getDotColor(booking)} h-3 w-3 rounded-full`}
                           ></div>
                         </div>
-                        <Card
-                          onClick={() => setSelectedBookingId(booking.id)}
+                          <Card
+                          onClick={() => openBooking(booking.id)}
                           className="border-border/60 bg-card/60 hover:bg-card/80 mb-2 flex-1 cursor-pointer rounded-3xl p-4 transition-all hover:shadow-md"
                         >
                           <div className="space-y-3">
@@ -419,7 +577,7 @@ export default function BookingsPage() {
                               ></div>
                             </div>
                             <Card
-                              onClick={() => setSelectedBookingId(booking.id)}
+                              onClick={() => openBooking(booking.id)}
                               className="border-border/60 bg-card/60 hover:bg-card/80 mb-2 flex-1 cursor-pointer rounded-3xl p-4 transition-all hover:shadow-md"
                             >
                               <div className="space-y-3">
@@ -654,7 +812,7 @@ export default function BookingsPage() {
                 </div>
 
                 <DrawerFooter className="px-0 pt-2">
-                  <div className="grid w-full grid-cols-2 gap-3">
+                  <div className="grid w-full gap-3">
                     <button
                       onClick={() =>
                         activeBooking?.id &&
@@ -667,6 +825,55 @@ export default function BookingsPage() {
                         ? strings.updating
                         : strings.markFullPaid}
                     </button>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        onClick={handleReschedule}
+                        disabled={rescheduleBooking.isPending}
+                        className="bg-muted text-foreground flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-medium transition hover:opacity-90 disabled:opacity-60"
+                      >
+                        <PencilLine className="h-4 w-4" />
+                        {rescheduleBooking.isPending
+                          ? strings.updating
+                          : strings.rescheduleBooking}
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (confirm(strings.deleteBookingConfirm)) {
+                            deleteBooking.mutate({ bookingId: activeBooking.id });
+                          }
+                        }}
+                        disabled={deleteBooking.isPending}
+                        className="bg-destructive text-destructive-foreground flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-medium transition hover:opacity-90 disabled:opacity-60"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        {deleteBooking.isPending
+                          ? strings.updating
+                          : strings.deleteBooking}
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-3 gap-3">
+                      <input
+                        type="date"
+                        value={rescheduleDate}
+                        onChange={(e) => setRescheduleDate(e.target.value)}
+                        className="bg-muted rounded-2xl px-3 py-3 text-sm"
+                        aria-label={strings.rescheduleDate}
+                      />
+                      <input
+                        type="time"
+                        value={rescheduleFrom}
+                        onChange={(e) => setRescheduleFrom(e.target.value)}
+                        className="bg-muted rounded-2xl px-3 py-3 text-sm"
+                        aria-label={strings.rescheduleFrom}
+                      />
+                      <input
+                        type="time"
+                        value={rescheduleTo}
+                        onChange={(e) => setRescheduleTo(e.target.value)}
+                        className="bg-muted rounded-2xl px-3 py-3 text-sm"
+                        aria-label={strings.rescheduleTo}
+                      />
+                    </div>
                     <button
                       onClick={() => setSelectedBookingId(null)}
                       className="bg-muted text-foreground w-full rounded-2xl px-4 py-3 text-sm font-medium transition hover:opacity-90"

@@ -36,7 +36,7 @@ const DrawerContent = React.forwardRef<
     <DrawerPrimitive.Content
       ref={ref}
       className={cn(
-        "fixed inset-x-0 bottom-0 z-50 mt-24 flex max-h-[90%] flex-col rounded-t-3xl border border-border/60 bg-background shadow-xl",
+        "fixed inset-x-0 bottom-0 z-50 mt-24 flex max-h-[90%] flex-col overflow-y-auto rounded-t-3xl border border-border/60 bg-background shadow-xl",
         "animate-in slide-in-from-bottom duration-300",
         className,
       )}

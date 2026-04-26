@@ -10,8 +10,8 @@ const Drawer = DrawerPrimitive.Root;
 
 const DrawerTrigger = DrawerPrimitive.Trigger;
 
-const DrawerPortal = ({ className, ...props }: DrawerPrimitive.DialogPortalProps) => (
-  <DrawerPrimitive.Portal className={cn(className)} {...props} />
+const DrawerPortal = (props: DrawerPrimitive.DialogPortalProps) => (
+  <DrawerPrimitive.Portal {...props} />
 );
 DrawerPortal.displayName = DrawerPrimitive.Portal.displayName;
 
@@ -43,6 +43,7 @@ const DrawerContent = React.forwardRef<
       {...props}
     >
       <div className="mx-auto mt-3 h-1 w-16 rounded-full bg-muted" />
+      <DrawerPrimitive.Title className="sr-only">Dialog</DrawerPrimitive.Title>
       {children}
     </DrawerPrimitive.Content>
   </DrawerPortal>

@@ -2,13 +2,17 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Card } from "~/components/ui/card";
+import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
 import { Spinner } from "~/components/spinner";
 import { api, type RouterOutputs } from "~/trpc/react";
-import { format, parseISO, parse, isAfter, isBefore } from "date-fns";
+import { format, parseISO, parse, isAfter, isBefore, type Locale } from "date-fns";
 import { enIN } from "date-fns/locale";
 import { formatSlotTime } from "~/lib/utils";
 import {
   Phone,
+  Plus,
   RotateCw,
   ChevronLeft,
   ChevronRight,
@@ -24,19 +28,32 @@ import {
   DrawerFooter,
   DrawerCloseButton,
 } from "~/components/ui/drawer";
-import { useToast } from "~/hooks/use-toast";
+import { toast } from "sonner";
+import { createBookingRecord, useBookings } from "~/lib/bookings-context";
 
 type BookingListItem = RouterOutputs["admin"]["bookingsList"][number];
 type BookingDetail = RouterOutputs["admin"]["bookingDetails"];
+type RescheduleSlot = {
+  date: string;
+  from: string;
+  to: string;
+};
 
 type BookingStrings = {
   bookingsTitle: string;
   bookingsDesc: string;
   refreshBookings: string;
+  manualBooking: string;
+  manualBookings: string;
+  createManualBooking: string;
+  optionalName: string;
+  optionalPhone: string;
+  leaveBlank: string;
   current: string;
   past: string;
   errorLoadBookings: string;
   noBookings: string;
+  noBookingsFoundFor: string;
   na: string;
   verificationCode: string;
   bookingDetails: string;
@@ -79,7 +96,7 @@ type BookingStrings = {
   sat: string;
 };
 
-function getPaymentLabel(status: string): string {
+function getPaymentLabel(status: string, _strings?: BookingStrings): string {
   switch (status) {
     case "advancePaid":
       return "Advance Paid";
@@ -158,19 +175,32 @@ export default function BookingsPage() {
   const [selectedCalendarDate, setSelectedCalendarDate] = useState<
     string | null
   >(null);
+  const { bookings: localBookings, addBooking } = useBookings();
   const [rescheduleDate, setRescheduleDate] = useState("");
-  const [rescheduleFrom, setRescheduleFrom] = useState("");
-  const [rescheduleTo, setRescheduleTo] = useState("");
-  const { toast } = useToast();
+  const [selectedRescheduleSlot, setSelectedRescheduleSlot] =
+    useState<RescheduleSlot | null>(null);
+  const [isRescheduleOpen, setIsRescheduleOpen] = useState(false);
+  const [isManualOpen, setIsManualOpen] = useState(false);
+  const [manualDate, setManualDate] = useState("");
+  const [manualSlot, setManualSlot] = useState<RescheduleSlot | null>(null);
+  const [manualName, setManualName] = useState<string | null>(null);
+  const [manualPhone, setManualPhone] = useState<string | null>(null);
   const strings: BookingStrings = useMemo(
     () => ({
       bookingsTitle: "Bookings",
       bookingsDesc: "Manage booking records",
       refreshBookings: "Refresh bookings",
+      manualBooking: "Manual Booking",
+      manualBookings: "Manual bookings",
+      createManualBooking: "Create manual booking",
+      optionalName: "Name (optional)",
+      optionalPhone: "Phone number (optional)",
+      leaveBlank: "Leave blank if not available",
       current: "Current",
       past: "Past",
       errorLoadBookings: "Failed to load bookings",
       noBookings: "No bookings found",
+      noBookingsFoundFor: "No bookings found for {date}",
       na: "N/A",
       verificationCode: "Verification Code",
       bookingDetails: "Booking Details",
@@ -273,6 +303,55 @@ export default function BookingsPage() {
       refetchOnWindowFocus: false,
     },
   );
+  const { data: availableSlots } = api.timeSlot.getAllAvailable.useQuery(
+    { days: 31 },
+    {
+      enabled: isRescheduleOpen || isManualOpen,
+    },
+  );
+
+  const manualBookings = useMemo(
+    () =>
+      localBookings
+        .filter((booking) => booking.notes === "manual")
+        .slice()
+        .reverse(),
+    [localBookings],
+  );
+
+  const availableSlotsByDate = useMemo(() => {
+    if (!availableSlots) return [];
+
+    const sourceSlots = availableSlots as RescheduleSlot[];
+    const grouped = sourceSlots.reduce<Record<string, RescheduleSlot[]>>(
+      (acc, slot) => {
+        acc[slot.date] ??= [];
+        acc[slot.date]!.push({
+          date: slot.date,
+          from: slot.from,
+          to: slot.to,
+        });
+        return acc;
+      },
+      {},
+    );
+
+    return Object.entries(grouped).map(([date, slots]) => ({
+      date,
+      slots,
+    }));
+  }, [availableSlots]) as Array<{
+    date: string;
+    slots: RescheduleSlot[];
+  }>;
+
+  const availableSlotsForSelectedDate = useMemo(() => {
+    return availableSlotsByDate.find((entry) => entry.date === rescheduleDate)?.slots ?? [];
+  }, [availableSlotsByDate, rescheduleDate]);
+
+  const availableManualSlotsForSelectedDate = useMemo(() => {
+    return availableSlotsByDate.find((entry) => entry.date === manualDate)?.slots ?? [];
+  }, [availableSlotsByDate, manualDate]);
 
   const verifyBooking = api.admin.verifyBooking.useMutation({
     onSuccess: async () => {
@@ -297,7 +376,7 @@ export default function BookingsPage() {
           : Promise.resolve(),
       ]);
       setSelectedBookingId(null);
-      toast({ title: strings.bookingDeleted });
+      toast(strings.bookingDeleted);
     },
   });
 
@@ -310,7 +389,7 @@ export default function BookingsPage() {
           ? utils.admin.bookingDetails.invalidate({ bookingId: selectedBookingId })
           : Promise.resolve(),
       ]);
-      toast({ title: strings.bookingRescheduled });
+      toast(strings.bookingRescheduled);
     },
   });
 
@@ -350,23 +429,139 @@ export default function BookingsPage() {
   const openBooking = (bookingId: string) => {
     setSelectedBookingId(bookingId);
     setRescheduleDate("");
-    setRescheduleFrom("");
-    setRescheduleTo("");
+    setSelectedRescheduleSlot(null);
+    setIsRescheduleOpen(false);
+    setIsManualOpen(false);
+  };
+
+  const openRescheduleDrawer = () => {
+    if (!activeBooking) return;
+
+    setRescheduleDate("");
+    setSelectedRescheduleSlot(null);
+    setIsRescheduleOpen(true);
+  };
+
+  const closeRescheduleDrawer = () => {
+    setIsRescheduleOpen(false);
+    setRescheduleDate("");
+    setSelectedRescheduleSlot(null);
+  };
+
+  const openManualBookingDrawer = () => {
+    setSelectedBookingId(null);
+    setIsRescheduleOpen(false);
+    setManualDate("");
+    setManualSlot(null);
+    setManualName(null);
+    setManualPhone(null);
+    setIsManualOpen(true);
+  };
+
+  const closeManualBookingDrawer = () => {
+    setIsManualOpen(false);
+    setManualDate("");
+    setManualSlot(null);
+    setManualName(null);
+    setManualPhone(null);
   };
 
   const handleReschedule = () => {
-    if (!selectedBookingId || !rescheduleDate || !rescheduleFrom || !rescheduleTo) {
-      toast({ title: strings.invalidBookingSlot });
+    if (
+      !selectedBookingId ||
+      !selectedRescheduleSlot?.date ||
+      !selectedRescheduleSlot?.from ||
+      !selectedRescheduleSlot?.to
+    ) {
+      toast(strings.invalidBookingSlot);
       return;
     }
 
     rescheduleBooking.mutate({
       bookingId: selectedBookingId,
-      date: rescheduleDate,
-      from: `${rescheduleFrom}:00`,
-      to: `${rescheduleTo}:00`,
+      date: selectedRescheduleSlot.date,
+      from: selectedRescheduleSlot.from,
+      to: selectedRescheduleSlot.to,
     });
+    closeRescheduleDrawer();
   };
+
+  const handleManualBooking = () => {
+    if (!manualSlot?.date || !manualSlot?.from || !manualSlot?.to) {
+      toast(strings.invalidBookingSlot);
+      return;
+    }
+
+    const booking = createBookingRecord({
+      slotId: `${manualSlot.date}-${manualSlot.from}-${manualSlot.to}`,
+      date: manualSlot.date,
+      from: manualSlot.from,
+      to: manualSlot.to,
+      bookingType: "cricket",
+      paymentOption: "advance",
+      amountPaid: 0,
+      totalAmount: 0,
+      verificationCode: "0000",
+      customer: {
+        name: manualName?.trim() ?? "",
+        number: manualPhone?.trim() ?? "",
+        email: "",
+        alternateContactName: "",
+        alternateContactNumber: "",
+        language: "en",
+      },
+      notes: "manual",
+    });
+
+    addBooking(booking);
+    toast(strings.createManualBooking);
+    closeManualBookingDrawer();
+  };
+
+  useEffect(() => {
+    if (!isRescheduleOpen || availableSlotsByDate.length === 0) return;
+
+    const activeDate = activeBooking?.slot?.date;
+    const isActiveDateAvailable =
+      activeDate && availableSlotsByDate.some((entry) => entry.date === activeDate);
+
+    const nextDate =
+      isActiveDateAvailable
+        ? activeDate
+        : availableSlotsByDate.some((entry) => entry.date === rescheduleDate)
+          ? rescheduleDate
+          : availableSlotsByDate[0]?.date ?? "";
+
+    if (nextDate && nextDate !== rescheduleDate) {
+      setRescheduleDate(nextDate);
+      setSelectedRescheduleSlot(null);
+    } else if (!rescheduleDate) {
+      setRescheduleDate(nextDate);
+      setSelectedRescheduleSlot(null);
+    }
+  }, [
+    activeBooking?.slot?.date,
+    availableSlotsByDate,
+    isRescheduleOpen,
+    rescheduleDate,
+  ]);
+
+  useEffect(() => {
+    if (!isManualOpen || availableSlotsByDate.length === 0) return;
+
+    const nextDate =
+      availableSlotsByDate.some((entry) => entry.date === manualDate)
+        ? manualDate
+        : availableSlotsByDate[0]?.date ?? "";
+
+    if (nextDate && nextDate !== manualDate) {
+      setManualDate(nextDate);
+      setManualSlot(null);
+    } else if (!manualDate) {
+      setManualDate(nextDate);
+      setManualSlot(null);
+    }
+  }, [availableSlotsByDate, isManualOpen, manualDate]);
 
   return (
     <div className="space-y-6 pb-20">
@@ -380,21 +575,75 @@ export default function BookingsPage() {
             {strings.bookingsDesc}
           </p>
         </div>
-        {selectedTab === "current" && (
-          <button
-            onClick={handleManualRefresh}
-            disabled={isRefetching}
-            aria-label={strings.refreshBookings}
-            className="bg-muted hover:bg-muted/80 mt-1 flex h-10 w-10 items-center justify-center rounded-full transition-all disabled:opacity-50"
+        <div className="mt-1 flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            className="h-10 w-10 rounded-full p-0"
+            aria-label={strings.manualBooking}
+            onClick={openManualBookingDrawer}
           >
-            <RotateCw
-              className={`h-4 w-4 transition-transform ${
-                isRefetching ? "animate-spin" : ""
-              }`}
-            />
-          </button>
-        )}
+            <Plus className="h-4 w-4" />
+          </Button>
+          {selectedTab === "current" && (
+            <button
+              onClick={handleManualRefresh}
+              disabled={isRefetching}
+              aria-label={strings.refreshBookings}
+              className="bg-muted hover:bg-muted/80 flex h-10 w-10 items-center justify-center rounded-full transition-all disabled:opacity-50"
+            >
+              <RotateCw
+                className={`h-4 w-4 transition-transform ${
+                  isRefetching ? "animate-spin" : ""
+                }`}
+              />
+            </button>
+          )}
+        </div>
       </header>
+
+      {manualBookings.length > 0 && (
+        <Card className="border-border/60 bg-card/60 rounded-3xl p-4">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div>
+              <p className="text-muted-foreground text-xs tracking-wide uppercase">
+                {strings.manualBookings}
+              </p>
+              <h2 className="text-sm font-semibold">
+                {strings.manualBookings}
+              </h2>
+            </div>
+            <span className="bg-muted text-muted-foreground rounded-full px-3 py-1 text-xs font-medium">
+              {manualBookings.length}
+            </span>
+          </div>
+          <div className="space-y-2">
+            {manualBookings.slice(0, 3).map((booking) => (
+              <div
+                key={booking.id}
+                className="flex items-center justify-between gap-3 rounded-2xl border border-border/60 bg-background/60 px-4 py-3 text-sm"
+              >
+                <div className="min-w-0">
+                  <p className="font-semibold">
+                    {booking.customer.name?.trim() || strings.na}
+                  </p>
+                  <p className="text-muted-foreground text-xs">
+                    {booking.customer.number?.trim() || strings.na}
+                  </p>
+                </div>
+                <div className="text-right text-xs">
+                  <p className="font-medium">
+                    {format(parseISO(booking.date), "MMM d, yyyy", { locale })}
+                  </p>
+                  <p className="text-muted-foreground">
+                    {formatSlotTime(booking.from)} - {formatSlotTime(booking.to)}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
 
       {/* Tabs */}
       <div className="flex gap-2 border-b">
@@ -629,7 +878,12 @@ export default function BookingsPage() {
       {/* Booking Details Drawer */}
       <Drawer
         open={Boolean(selectedBookingId)}
-        onOpenChange={(open) => !open && setSelectedBookingId(null)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedBookingId(null);
+            setIsRescheduleOpen(false);
+          }
+        }}
       >
         <DrawerContent>
           <DrawerCloseButton />
@@ -826,21 +1080,19 @@ export default function BookingsPage() {
                         : strings.markFullPaid}
                     </button>
                     <div className="grid grid-cols-2 gap-3">
-                      <button
-                        onClick={handleReschedule}
-                        disabled={rescheduleBooking.isPending}
-                        className="bg-muted text-foreground flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-medium transition hover:opacity-90 disabled:opacity-60"
-                      >
-                        <PencilLine className="h-4 w-4" />
-                        {rescheduleBooking.isPending
-                          ? strings.updating
-                          : strings.rescheduleBooking}
-                      </button>
-                      <button
-                        onClick={() => {
-                          if (confirm(strings.deleteBookingConfirm)) {
-                            deleteBooking.mutate({ bookingId: activeBooking.id });
-                          }
+                    <button
+                      onClick={openRescheduleDrawer}
+                      disabled={!activeBooking || rescheduleBooking.isPending}
+                      className="bg-muted text-foreground flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-medium transition hover:opacity-90 disabled:opacity-60"
+                    >
+                      <PencilLine className="h-4 w-4" />
+                      {strings.rescheduleBooking}
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (confirm(strings.deleteBookingConfirm)) {
+                          deleteBooking.mutate({ bookingId: activeBooking.id });
+                        }
                         }}
                         disabled={deleteBooking.isPending}
                         className="bg-destructive text-destructive-foreground flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-medium transition hover:opacity-90 disabled:opacity-60"
@@ -850,29 +1102,6 @@ export default function BookingsPage() {
                           ? strings.updating
                           : strings.deleteBooking}
                       </button>
-                    </div>
-                    <div className="grid grid-cols-3 gap-3">
-                      <input
-                        type="date"
-                        value={rescheduleDate}
-                        onChange={(e) => setRescheduleDate(e.target.value)}
-                        className="bg-muted rounded-2xl px-3 py-3 text-sm"
-                        aria-label={strings.rescheduleDate}
-                      />
-                      <input
-                        type="time"
-                        value={rescheduleFrom}
-                        onChange={(e) => setRescheduleFrom(e.target.value)}
-                        className="bg-muted rounded-2xl px-3 py-3 text-sm"
-                        aria-label={strings.rescheduleFrom}
-                      />
-                      <input
-                        type="time"
-                        value={rescheduleTo}
-                        onChange={(e) => setRescheduleTo(e.target.value)}
-                        className="bg-muted rounded-2xl px-3 py-3 text-sm"
-                        aria-label={strings.rescheduleTo}
-                      />
                     </div>
                     <button
                       onClick={() => setSelectedBookingId(null)}
@@ -885,6 +1114,227 @@ export default function BookingsPage() {
               </>
             )}
           </div>
+        </DrawerContent>
+      </Drawer>
+
+      <Drawer
+        open={isRescheduleOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            closeRescheduleDrawer();
+          }
+        }}
+      >
+        <DrawerContent className="max-h-[85vh]">
+          <DrawerCloseButton />
+          <DrawerHeader>
+            <DrawerTitle>{strings.rescheduleBooking}</DrawerTitle>
+            <DrawerDescription>
+              {activeBooking
+                ? `PP-${activeBooking.id.slice(-6).toUpperCase()}`
+                : strings.rescheduleBooking}
+            </DrawerDescription>
+          </DrawerHeader>
+          <div className="px-6 pb-4">
+            <div className="mb-4 flex gap-2 overflow-x-auto pb-2">
+              {availableSlotsByDate.map((entry) => {
+                const isActive = rescheduleDate === entry.date;
+                return (
+                  <button
+                    key={entry.date}
+                    onClick={() => {
+                      setRescheduleDate(entry.date);
+                      setSelectedRescheduleSlot(null);
+                    }}
+                    className={`flex min-w-24 flex-col items-center rounded-2xl border px-4 py-3 text-sm transition ${
+                      isActive
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border text-muted-foreground"
+                    }`}
+                  >
+                    <span className="font-semibold uppercase">
+                      {format(parseISO(entry.date), "EEE")}
+                    </span>
+                    <span>{format(parseISO(entry.date), "MMM d")}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="grid max-h-80 grid-cols-2 gap-3 overflow-y-auto pr-1">
+              {availableSlotsForSelectedDate.length > 0 ? (
+                availableSlotsForSelectedDate.map((slot) => {
+                  const isChosen =
+                    selectedRescheduleSlot?.date === slot.date &&
+                    selectedRescheduleSlot?.from === slot.from &&
+                    selectedRescheduleSlot?.to === slot.to;
+
+                  return (
+                    <button
+                      key={`${slot.date}-${slot.from}-${slot.to}`}
+                      onClick={() => setSelectedRescheduleSlot(slot)}
+                      className={`flex flex-col rounded-2xl border px-3 py-3 text-left text-sm transition ${
+                        isChosen
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border text-muted-foreground"
+                      }`}
+                    >
+                      <span className="font-semibold">
+                        {formatSlotTime(slot.from)} - {formatSlotTime(slot.to)}
+                      </span>
+                      <span className="text-muted-foreground mt-1 text-xs">
+                        {isChosen ? "Selected" : "Tap to choose"}
+                      </span>
+                    </button>
+                  );
+                })
+              ) : (
+                <Card className="border-border/60 bg-card/60 col-span-2 rounded-3xl p-4 text-center text-sm text-muted-foreground">
+                  No free slots for this day
+                </Card>
+              )}
+            </div>
+          </div>
+          <DrawerFooter>
+            <Button
+              type="button"
+              className="w-full rounded-xl"
+              disabled={!selectedRescheduleSlot || rescheduleBooking.isPending}
+              onClick={handleReschedule}
+            >
+              {rescheduleBooking.isPending
+                ? strings.updating
+                : strings.saveBooking}
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={closeRescheduleDrawer}
+            >
+              {strings.cancel}
+            </Button>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+
+      <Drawer
+        open={isManualOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            closeManualBookingDrawer();
+          }
+        }}
+      >
+        <DrawerContent className="max-h-[85vh]">
+          <DrawerCloseButton />
+          <DrawerHeader>
+            <DrawerTitle>{strings.createManualBooking}</DrawerTitle>
+            <DrawerDescription>
+              {strings.leaveBlank}
+            </DrawerDescription>
+          </DrawerHeader>
+          <div className="space-y-4 px-6 pb-4">
+            <div className="mb-2 flex gap-2 overflow-x-auto pb-2">
+              {availableSlotsByDate.map((entry) => {
+                const isActive = manualDate === entry.date;
+                return (
+                  <button
+                    key={entry.date}
+                    onClick={() => {
+                      setManualDate(entry.date);
+                      setManualSlot(null);
+                    }}
+                    className={`flex min-w-24 flex-col items-center rounded-2xl border px-4 py-3 text-sm transition ${
+                      isActive
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border text-muted-foreground"
+                    }`}
+                  >
+                    <span className="font-semibold uppercase">
+                      {format(parseISO(entry.date), "EEE")}
+                    </span>
+                    <span>{format(parseISO(entry.date), "MMM d")}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="grid max-h-72 grid-cols-2 gap-3 overflow-y-auto pr-1">
+              {availableManualSlotsForSelectedDate.length > 0 ? (
+                availableManualSlotsForSelectedDate.map((slot) => {
+                  const isChosen =
+                    manualSlot?.date === slot.date &&
+                    manualSlot?.from === slot.from &&
+                    manualSlot?.to === slot.to;
+
+                  return (
+                    <button
+                      key={`${slot.date}-${slot.from}-${slot.to}`}
+                      onClick={() => setManualSlot(slot)}
+                      className={`flex flex-col rounded-2xl border px-3 py-3 text-left text-sm transition ${
+                        isChosen
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border text-muted-foreground"
+                      }`}
+                    >
+                      <span className="font-semibold">
+                        {formatSlotTime(slot.from)} - {formatSlotTime(slot.to)}
+                      </span>
+                      <span className="text-muted-foreground mt-1 text-xs">
+                        {isChosen ? "Selected" : "Tap to choose"}
+                      </span>
+                    </button>
+                  );
+                })
+              ) : (
+                <Card className="border-border/60 bg-card/60 col-span-2 rounded-3xl p-4 text-center text-sm text-muted-foreground">
+                  No free slots for this day
+                </Card>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="manual-name">{strings.optionalName}</Label>
+              <Input
+                id="manual-name"
+                value={manualName ?? ""}
+                onChange={(event) =>
+                  setManualName(event.target.value.trim() ? event.target.value : null)
+                }
+                placeholder={strings.optionalName}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="manual-phone">{strings.optionalPhone}</Label>
+              <Input
+                id="manual-phone"
+                inputMode="tel"
+                value={manualPhone ?? ""}
+                onChange={(event) =>
+                  setManualPhone(event.target.value.trim() ? event.target.value : null)
+                }
+                placeholder={strings.optionalPhone}
+              />
+            </div>
+          </div>
+          <DrawerFooter>
+            <Button
+              type="button"
+              className="w-full rounded-xl"
+              disabled={!manualSlot}
+              onClick={handleManualBooking}
+            >
+              {strings.createManualBooking}
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={closeManualBookingDrawer}
+            >
+              {strings.cancel}
+            </Button>
+          </DrawerFooter>
         </DrawerContent>
       </Drawer>
     </div>
@@ -904,8 +1354,8 @@ function CalendarPicker({
   onDateSelect: (date: string) => void;
   calendarMonth: Date;
   onMonthChange: (date: Date) => void;
-  strings: any;
-  locale: any;
+  strings: BookingStrings;
+  locale: Locale;
 }) {
   const getDaysInMonth = (date: Date) => {
     return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();

@@ -899,7 +899,7 @@ export default function BookingPage() {
                 </div>
               </div>
             )}
-            <div className="grid max-h-72 grid-cols-1 gap-3 overflow-y-auto px-6 pb-4">
+            <div className="grid max-h-[55vh] grid-cols-1 gap-3 overflow-y-auto px-6 pb-4">
               {isLoadingSlots ? (
                 <div className="flex items-center justify-center py-12">
                   <Spinner />

@@ -67,6 +67,19 @@ export function SlotManager() {
     return slotsConfig.weeklyOverrides?.[selectedDay] ?? null;
   }, [slotsConfig, selectedDay]);
 
+  const displayedSlots = useMemo(() => {
+    if (!currentDayConfig) return [];
+
+    return currentDayConfig.AvailableSlots.map((slot, index) => ({
+      slot,
+      index,
+    })).sort((a, b) => {
+      const fromCompare = a.slot.from.localeCompare(b.slot.from);
+      if (fromCompare !== 0) return fromCompare;
+      return a.slot.to.localeCompare(b.slot.to);
+    });
+  }, [currentDayConfig]);
+
   const handleToggleSlot = useCallback(
     (index: number) => {
       if (!slotsConfig) return;
@@ -172,9 +185,10 @@ export function SlotManager() {
   const handleSaveSlots = useCallback(async () => {
     if (!slotsConfig) return;
 
+    const defaultAdvanceAmount = slotsConfig.default.advanceAmount ?? 0;
+    const defaultFullAmount = slotsConfig.default.fullAmount ?? 0;
     const hasInvalidAmount =
-      slotsConfig.default.advanceAmount <= 0 ||
-      slotsConfig.default.fullAmount <= 0;
+      defaultAdvanceAmount <= 0 || defaultFullAmount <= 0;
     if (hasInvalidAmount) {
       toast.error(strings.amountMustBePositive);
       return;
@@ -281,7 +295,7 @@ export function SlotManager() {
                   <div className="flex justify-end gap-2 pb-2">
                     <Button
                       variant="ghost"
-                      size="xs"
+                      size="sm"
                       className="h-7 rounded-xl text-[10px]"
                       onClick={handleResetToDefault}
                     >
@@ -290,7 +304,7 @@ export function SlotManager() {
                   </div>
                 )}
 
-                {currentDayConfig.AvailableSlots.map((slot, index) => {
+                {displayedSlots.map(({ slot, index }) => {
                   const isUnavailable = slot.status === "unavailable";
                   const statusLabel =
                     slot.status === "available"

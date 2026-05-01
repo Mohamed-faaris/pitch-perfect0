@@ -83,6 +83,14 @@ export default function DailySlotsPage() {
     return eachDayOfInterval({ start, end });
   }, [calendarMonth]);
 
+  const displayedSlots = useMemo(() => {
+    return [...slots].sort((a, b) => {
+      const fromCompare = a.from.localeCompare(b.from);
+      if (fromCompare !== 0) return fromCompare;
+      return a.to.localeCompare(b.to);
+    });
+  }, [slots]);
+
   const handleStartEdit = (index: number, slot: SlotData) => {
     setEditingSlotIndex(index);
     setEditValues({
@@ -271,7 +279,7 @@ export default function DailySlotsPage() {
         )}
 
         <div className="grid gap-3">
-          {(slots as SlotData[]).map((slot, index) => {
+          {displayedSlots.map((slot, index) => {
             const isEditing = editingSlotIndex === index;
             const isVirtual = !slot.id;
 
@@ -309,7 +317,7 @@ export default function DailySlotsPage() {
                         {slot.status === "available"
                           ? strings.available
                           : slot.status === "booked"
-                            ? strings.booked
+                            ? "Booked"
                             : strings.unavailable}
                       </span>
                       <span className="text-muted-foreground">

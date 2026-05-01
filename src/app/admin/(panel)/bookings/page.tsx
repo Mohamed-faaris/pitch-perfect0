@@ -766,11 +766,18 @@ export default function BookingsPage() {
                                   {booking.phoneNumber}
                                 </p>
                               </div>
-                              <span
-                                className={`${getPaymentBadgeClass(booking.status)} rounded-full px-3 py-1 text-xs font-semibold`}
-                              >
-                                {getPaymentLabel(booking.status, strings)}
-                              </span>
+                              <div className="flex flex-col items-end gap-1">
+                                <span
+                                  className={`${getPaymentBadgeClass(booking.status)} rounded-full px-3 py-1 text-xs font-semibold`}
+                                >
+                                  {getPaymentLabel(booking.status, strings)}
+                                </span>
+                                {booking.status === "advancePaid" && (
+                                  <span className="bg-muted text-muted-foreground inline-flex rounded-full px-3 py-1 text-xs font-medium">
+                                    Rs {Math.round(booking.amountPaid / 100)}
+                                  </span>
+                                )}
+                              </div>
                             </div>
                             <p className="text-muted-foreground text-sm">
                               {slotTime}
@@ -862,11 +869,19 @@ export default function BookingsPage() {
                                       {booking.phoneNumber}
                                     </p>
                                   </div>
-                                  <span
-                                    className={`${getPaymentBadgeClass(booking.status)} rounded-full px-3 py-1 text-xs font-semibold`}
-                                  >
-                                    {getPaymentLabel(booking.status, strings)}
-                                  </span>
+                                  <div className="flex flex-col items-end gap-1">
+                                    <span
+                                      className={`${getPaymentBadgeClass(booking.status)} rounded-full px-3 py-1 text-xs font-semibold`}
+                                    >
+                                      {getPaymentLabel(booking.status, strings)}
+                                    </span>
+                                    {booking.status === "advancePaid" && (
+                                      <span className="bg-muted text-muted-foreground inline-flex rounded-full px-3 py-1 text-xs font-medium">
+                                        Rs{" "}
+                                        {Math.round(booking.amountPaid / 100)}
+                                      </span>
+                                    )}
+                                  </div>
                                 </div>
                                 <p className="text-muted-foreground text-sm">
                                   {slotTime}

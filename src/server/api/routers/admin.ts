@@ -9,6 +9,7 @@ import {
   and,
   or,
   gte,
+  inArray,
   notInArray,
 } from "drizzle-orm";
 import { z } from "zod";
@@ -63,6 +64,8 @@ const superAdminProcedure = managerProcedure.use(({ ctx, next }) => {
   return next();
 });
 
+const paidBookingStatuses = ["advancePaid", "fullPaid"] as const;
+
 export const adminRouter = createTRPCRouter({
   bookingsList: managerProcedure
     .input(
@@ -106,7 +109,7 @@ export const adminRouter = createTRPCRouter({
           // All next day bookings
           eq(timeSlots.date, nextDateStr),
         ),
-        notInArray(bookings.status, ["paymentFailed", "wontCome"]),
+        inArray(bookings.status, paidBookingStatuses),
       ];
 
       const records = await db
@@ -254,7 +257,14 @@ export const adminRouter = createTRPCRouter({
         });
       }
 
-      if (!validateSlotAgainstConfig(input.date, input.from, input.to, config.slots)) {
+      if (
+        !validateSlotAgainstConfig(
+          input.date,
+          input.from,
+          input.to,
+          config.slots,
+        )
+      ) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "Selected time slot is not valid according to configuration",
@@ -276,7 +286,12 @@ export const adminRouter = createTRPCRouter({
         });
       }
 
-      const slotToUse = createSlotFromConfig(input.date, input.from, input.to, config.slots);
+      const slotToUse = createSlotFromConfig(
+        input.date,
+        input.from,
+        input.to,
+        config.slots,
+      );
 
       const [upsertedSlot] = await db
         .insert(timeSlots)
@@ -665,7 +680,7 @@ export const adminRouter = createTRPCRouter({
         .where(
           and(
             eq(timeSlots.date, input.date),
-            notInArray(bookings.status, ["paymentFailed", "wontCome"]),
+            inArray(bookings.status, paidBookingStatuses),
           ),
         )
         .orderBy(asc(timeSlots.from));

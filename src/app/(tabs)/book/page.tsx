@@ -7,7 +7,7 @@ import { addDays, format, parseISO } from "date-fns";
 import { toPng } from "html-to-image";
 import confetti from "canvas-confetti";
 import { motion, AnimatePresence } from "motion/react";
-import { Pencil, CalendarX } from "lucide-react";
+import { Pencil, CalendarX, SunMedium, SunMoon, MoonStar } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -491,6 +491,24 @@ export default function BookingPage() {
     return new Date(`${slot.date}T${slot.from}`) < new Date();
   }, []);
 
+  const getTimeOfDayLabel = useCallback(
+    (time: string) => {
+      const hour = Number(time.slice(0, 2));
+      if (Number.isNaN(hour)) return strings.dayLabel;
+      if (hour < 12) return strings.dayLabel;
+      if (hour < 20) return strings.eveningLabel;
+      return strings.nightLabel;
+    },
+    [strings.dayLabel, strings.eveningLabel, strings.nightLabel],
+  );
+
+  const getTimeOfDayIcon = useCallback((time: string) => {
+    const hour = Number(time.slice(0, 2));
+    if (Number.isNaN(hour) || hour < 12) return SunMedium;
+    if (hour < 20) return SunMoon;
+    return MoonStar;
+  }, []);
+
   const selectionCount = selectedSlots.length;
 
   useEffect(() => {
@@ -965,6 +983,13 @@ export default function BookingPage() {
                         <span className="font-semibold">
                           {formatSlotTime(slot.from)} –{" "}
                           {formatSlotTime(slot.to)}
+                        </span>
+                        <span className="text-muted-foreground inline-flex items-center gap-1 text-[11px] tracking-wide uppercase">
+                          {(() => {
+                            const TimeIcon = getTimeOfDayIcon(slot.from);
+                            return <TimeIcon className="h-3 w-3" />;
+                          })()}
+                          {getTimeOfDayLabel(slot.from)}
                         </span>
                         <span className="text-muted-foreground text-[11px]">
                           {strings.advance} {toRupees(slot.advanceAmount)} •{" "}

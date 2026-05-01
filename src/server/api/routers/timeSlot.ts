@@ -89,6 +89,7 @@ export const timeSlotRouter = createTRPCRouter({
     .input(
       z.object({
         date: z.string().default(() => new Date().toISOString().split("T")[0]!), // Default to today (YYYY-MM-DD format)
+        includePast: z.boolean().default(false),
       }),
     )
     .query(async ({ input }) => {
@@ -123,6 +124,7 @@ export const timeSlotRouter = createTRPCRouter({
       const today = now.toISOString().split("T")[0]!;
 
       const filteredSlots = mergedSlots.filter((slot) => {
+        if (input.includePast) return true;
         if (slot.date === today) {
           return !isPastTime(slot.date, slot.from);
         }

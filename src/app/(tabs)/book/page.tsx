@@ -126,8 +126,8 @@ const fireSideCannons = () => {
 };
 
 function useSlotBoard(selectedDate: string) {
-  const { data, isLoading } = api.timeSlot.getAllAvailable.useQuery(
-    { date: selectedDate, days: 1 },
+  const { data, isLoading } = api.timeSlot.getAllByDate.useQuery(
+    { date: selectedDate, includePast: true },
     { enabled: !!selectedDate, staleTime: 60_000 },
   );
 
@@ -143,7 +143,7 @@ function useSlotBoard(selectedDate: string) {
           date: slot.date,
           from: slot.from.slice(0, 5),
           to: slot.to.slice(0, 5),
-          status: "available",
+          status: (slot.status ?? "available") as SlotView["status"],
           fullAmount: slot.fullAmount,
           advanceAmount: slot.advanceAmount,
         }) satisfies SlotView,
@@ -480,8 +480,16 @@ export default function BookingPage() {
   }, [slots]);
 
   const slotsForSelectedDate = useMemo(() => {
-    return slotsByDate[selectedDate ?? ""] ?? [];
+    return (slotsByDate[selectedDate ?? ""] ?? [])
+      .slice()
+      .sort((a, b) => a.from.localeCompare(b.from));
   }, [slotsByDate, selectedDate]);
+
+  const isPastSelectedSlot = useCallback((slot: SlotView) => {
+    const today = format(new Date(), "yyyy-MM-dd");
+    if (slot.date !== today) return false;
+    return new Date(`${slot.date}T${slot.from}`) < new Date();
+  }, []);
 
   const selectionCount = selectedSlots.length;
 
@@ -891,13 +899,13 @@ export default function BookingPage() {
                 </div>
               </div>
             )}
-            <div className="grid max-h-72 grid-cols-2 gap-3 overflow-y-auto px-6 pb-4">
+            <div className="grid max-h-72 grid-cols-1 gap-3 overflow-y-auto px-6 pb-4">
               {isLoadingSlots ? (
-                <div className="col-span-2 flex items-center justify-center py-12">
+                <div className="flex items-center justify-center py-12">
                   <Spinner />
                 </div>
               ) : slotsForSelectedDate.length === 0 ? (
-                <div className="col-span-2 flex flex-col items-center justify-center py-12 text-center">
+                <div className="flex flex-col items-center justify-center py-12 text-center">
                   <div className="bg-muted mb-4 flex h-12 w-12 items-center justify-center rounded-2xl">
                     <CalendarX className="text-muted-foreground h-6 w-6" />
                   </div>
@@ -917,9 +925,22 @@ export default function BookingPage() {
                       item.from === slot.from &&
                       item.to === slot.to,
                   );
+                  const isPast = isPastSelectedSlot(slot);
+                  const isBooked = slot.status === "booked";
+                  const isUnavailable = slot.status === "unavailable";
+                  const isBlocked = isPast || isBooked || isUnavailable;
                   const isAtLimit =
                     !isSelected && selectionCount >= MAX_SLOTS_PER_DAY;
-                  const isDisabled = isAtLimit;
+                  const isDisabled = isBlocked || isAtLimit;
+                  const statusLabel = isPast
+                    ? strings.timeEnded
+                    : isBooked
+                      ? strings.booked
+                      : isUnavailable
+                        ? strings.unavailable
+                        : isAtLimit && !isSelected
+                          ? strings.slotLimitReached
+                          : strings.tapToSelect;
                   return (
                     <motion.button
                       key={slot.id}
@@ -927,29 +948,31 @@ export default function BookingPage() {
                       disabled={isDisabled}
                       onClick={() => toggleSlotSelection(slot)}
                       className={cn(
-                        "flex flex-col rounded-2xl border px-3 py-3 text-left text-sm transition-all",
+                        "flex items-center justify-between rounded-2xl border px-3 py-3 text-left text-sm transition-all",
                         "hover:border-primary",
                         isSelected &&
                           "border-primary bg-primary/10 text-primary shadow-sm",
-                        isAtLimit && !isSelected && "opacity-60",
+                        isBlocked &&
+                          !isSelected &&
+                          "bg-muted/50 text-muted-foreground",
+                        isAtLimit && !isSelected && !isBlocked && "opacity-60",
                       )}
                       layout
                       whileTap={{ scale: isDisabled ? 1 : 0.97 }}
                       transition={springy}
                     >
-                      <span className="font-semibold">
-                        {formatSlotTime(slot.from)} – {formatSlotTime(slot.to)}
-                      </span>
-                      <span className="text-muted-foreground mt-1 text-[11px]">
-                        {strings.advance} {toRupees(slot.advanceAmount)} •{" "}
-                        {strings.full} {toRupees(slot.fullAmount)}
-                      </span>
-                      <span className="text-muted-foreground mt-2 inline-flex items-center gap-2 text-xs">
-                        {isSelected
-                          ? strings.selected
-                          : isAtLimit
-                            ? strings.slotLimitReached
-                            : strings.tapToSelect}
+                      <div className="flex min-w-0 flex-1 flex-col gap-1 pr-3">
+                        <span className="font-semibold">
+                          {formatSlotTime(slot.from)} –{" "}
+                          {formatSlotTime(slot.to)}
+                        </span>
+                        <span className="text-muted-foreground text-[11px]">
+                          {strings.advance} {toRupees(slot.advanceAmount)} •{" "}
+                          {strings.full} {toRupees(slot.fullAmount)}
+                        </span>
+                      </div>
+                      <span className="text-muted-foreground inline-flex shrink-0 items-center gap-2 text-xs">
+                        {isSelected ? strings.selected : statusLabel}
                         {isSelected && (
                           <span className="bg-primary h-2 w-2 rounded-full" />
                         )}

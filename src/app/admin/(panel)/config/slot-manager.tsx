@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
+import { Switch } from "~/components/ui/switch";
 import {
   Drawer,
   DrawerClose,
@@ -325,19 +326,10 @@ export function SlotManager() {
                             {statusLabel}
                           </p>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => handleToggleSlot(index)}
-                          className={`rounded-2xl px-4 py-2 text-xs font-semibold transition ${
-                            isUnavailable
-                              ? "bg-muted text-muted-foreground"
-                              : "bg-primary text-primary-foreground"
-                          }`}
-                        >
-                          {isUnavailable
-                            ? strings.markAvailable
-                            : strings.markUnavailable}
-                        </button>
+                        <Switch
+                          checked={!isUnavailable}
+                          onCheckedChange={() => handleToggleSlot(index)}
+                        />
                       </div>
                       <div className="grid gap-3 pt-3 sm:grid-cols-2">
                         <div className="space-y-1">

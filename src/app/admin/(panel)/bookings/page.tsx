@@ -7,7 +7,14 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Spinner } from "~/components/spinner";
 import { api, type RouterOutputs } from "~/trpc/react";
-import { format, parseISO, parse, isAfter, isBefore, type Locale } from "date-fns";
+import {
+  format,
+  parseISO,
+  parse,
+  isAfter,
+  isBefore,
+  type Locale,
+} from "date-fns";
 import { enIN } from "date-fns/locale";
 import { formatSlotTime } from "~/lib/utils";
 import {
@@ -346,11 +353,17 @@ export default function BookingsPage() {
   }>;
 
   const availableSlotsForSelectedDate = useMemo(() => {
-    return availableSlotsByDate.find((entry) => entry.date === rescheduleDate)?.slots ?? [];
+    return (
+      availableSlotsByDate.find((entry) => entry.date === rescheduleDate)
+        ?.slots ?? []
+    );
   }, [availableSlotsByDate, rescheduleDate]);
 
   const availableManualSlotsForSelectedDate = useMemo(() => {
-    return availableSlotsByDate.find((entry) => entry.date === manualDate)?.slots ?? [];
+    return (
+      availableSlotsByDate.find((entry) => entry.date === manualDate)?.slots ??
+      []
+    );
   }, [availableSlotsByDate, manualDate]);
 
   const verifyBooking = api.admin.verifyBooking.useMutation({
@@ -372,7 +385,9 @@ export default function BookingsPage() {
         utils.admin.bookingsList.invalidate(),
         utils.admin.getBookingsByDate.invalidate(),
         selectedBookingId
-          ? utils.admin.bookingDetails.invalidate({ bookingId: selectedBookingId })
+          ? utils.admin.bookingDetails.invalidate({
+              bookingId: selectedBookingId,
+            })
           : Promise.resolve(),
       ]);
       setSelectedBookingId(null);
@@ -386,7 +401,9 @@ export default function BookingsPage() {
         utils.admin.bookingsList.invalidate(),
         utils.admin.getBookingsByDate.invalidate(),
         selectedBookingId
-          ? utils.admin.bookingDetails.invalidate({ bookingId: selectedBookingId })
+          ? utils.admin.bookingDetails.invalidate({
+              bookingId: selectedBookingId,
+            })
           : Promise.resolve(),
       ]);
       toast(strings.bookingRescheduled);
@@ -522,21 +539,20 @@ export default function BookingsPage() {
     if (!isRescheduleOpen || availableSlotsByDate.length === 0) return;
 
     const activeDate = activeBooking?.slot?.date;
-    const isActiveDateAvailable =
-      activeDate && availableSlotsByDate.some((entry) => entry.date === activeDate);
+    const hasValidSelection = availableSlotsByDate.some(
+      (entry) => entry.date === rescheduleDate,
+    );
 
-    const nextDate =
-      isActiveDateAvailable
-        ? activeDate
-        : availableSlotsByDate.some((entry) => entry.date === rescheduleDate)
-          ? rescheduleDate
-          : availableSlotsByDate[0]?.date ?? "";
+    if (!hasValidSelection) {
+      const nextDate =
+        (activeDate &&
+        availableSlotsByDate.some((entry) => entry.date === activeDate)
+          ? activeDate
+          : availableSlotsByDate[0]?.date) ?? "";
 
-    if (nextDate && nextDate !== rescheduleDate) {
-      setRescheduleDate(nextDate);
-      setSelectedRescheduleSlot(null);
-    } else if (!rescheduleDate) {
-      setRescheduleDate(nextDate);
+      if (nextDate) {
+        setRescheduleDate(nextDate);
+      }
       setSelectedRescheduleSlot(null);
     }
   }, [
@@ -549,10 +565,11 @@ export default function BookingsPage() {
   useEffect(() => {
     if (!isManualOpen || availableSlotsByDate.length === 0) return;
 
-    const nextDate =
-      availableSlotsByDate.some((entry) => entry.date === manualDate)
-        ? manualDate
-        : availableSlotsByDate[0]?.date ?? "";
+    const nextDate = availableSlotsByDate.some(
+      (entry) => entry.date === manualDate,
+    )
+      ? manualDate
+      : (availableSlotsByDate[0]?.date ?? "");
 
     if (nextDate && nextDate !== manualDate) {
       setManualDate(nextDate);
@@ -621,7 +638,7 @@ export default function BookingsPage() {
             {manualBookings.slice(0, 3).map((booking) => (
               <div
                 key={booking.id}
-                className="flex items-center justify-between gap-3 rounded-2xl border border-border/60 bg-background/60 px-4 py-3 text-sm"
+                className="border-border/60 bg-background/60 flex items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-sm"
               >
                 <div className="min-w-0">
                   <p className="font-semibold">
@@ -636,7 +653,8 @@ export default function BookingsPage() {
                     {format(parseISO(booking.date), "MMM d, yyyy", { locale })}
                   </p>
                   <p className="text-muted-foreground">
-                    {formatSlotTime(booking.from)} - {formatSlotTime(booking.to)}
+                    {formatSlotTime(booking.from)} -{" "}
+                    {formatSlotTime(booking.to)}
                   </p>
                 </div>
               </div>
@@ -729,7 +747,7 @@ export default function BookingsPage() {
                             className={`${getDotColor(booking)} h-3 w-3 rounded-full`}
                           ></div>
                         </div>
-                          <Card
+                        <Card
                           onClick={() => openBooking(booking.id)}
                           className="border-border/60 bg-card/60 hover:bg-card/80 mb-2 flex-1 cursor-pointer rounded-3xl p-4 transition-all hover:shadow-md"
                         >
@@ -1037,13 +1055,13 @@ export default function BookingsPage() {
                       <div className="mt-1 space-y-0.5">
                         {activeBooking.status !== "paymentFailed" &&
                           typeof activeBooking.amountPaid === "number" && (
-                          <p className="text-sm">
-                            {strings.paid}: ₹
-                            {(activeBooking.amountPaid / 100).toLocaleString(
-                              "en-IN",
-                            )}
-                          </p>
-                        )}
+                            <p className="text-sm">
+                              {strings.paid}: ₹
+                              {(activeBooking.amountPaid / 100).toLocaleString(
+                                "en-IN",
+                              )}
+                            </p>
+                          )}
                         {typeof bookingTotalAmount === "number" && (
                           <p className="text-muted-foreground text-xs">
                             {strings.total}: ₹
@@ -1080,19 +1098,21 @@ export default function BookingsPage() {
                         : strings.markFullPaid}
                     </button>
                     <div className="grid grid-cols-2 gap-3">
-                    <button
-                      onClick={openRescheduleDrawer}
-                      disabled={!activeBooking || rescheduleBooking.isPending}
-                      className="bg-muted text-foreground flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-medium transition hover:opacity-90 disabled:opacity-60"
-                    >
-                      <PencilLine className="h-4 w-4" />
-                      {strings.rescheduleBooking}
-                    </button>
-                    <button
-                      onClick={() => {
-                        if (confirm(strings.deleteBookingConfirm)) {
-                          deleteBooking.mutate({ bookingId: activeBooking.id });
-                        }
+                      <button
+                        onClick={openRescheduleDrawer}
+                        disabled={!activeBooking || rescheduleBooking.isPending}
+                        className="bg-muted text-foreground flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-medium transition hover:opacity-90 disabled:opacity-60"
+                      >
+                        <PencilLine className="h-4 w-4" />
+                        {strings.rescheduleBooking}
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (confirm(strings.deleteBookingConfirm)) {
+                            deleteBooking.mutate({
+                              bookingId: activeBooking.id,
+                            });
+                          }
                         }}
                         disabled={deleteBooking.isPending}
                         className="bg-destructive text-destructive-foreground flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-medium transition hover:opacity-90 disabled:opacity-60"
@@ -1189,7 +1209,7 @@ export default function BookingsPage() {
                   );
                 })
               ) : (
-                <Card className="border-border/60 bg-card/60 col-span-2 rounded-3xl p-4 text-center text-sm text-muted-foreground">
+                <Card className="border-border/60 bg-card/60 text-muted-foreground col-span-2 rounded-3xl p-4 text-center text-sm">
                   No free slots for this day
                 </Card>
               )}
@@ -1229,9 +1249,7 @@ export default function BookingsPage() {
           <DrawerCloseButton />
           <DrawerHeader>
             <DrawerTitle>{strings.createManualBooking}</DrawerTitle>
-            <DrawerDescription>
-              {strings.leaveBlank}
-            </DrawerDescription>
+            <DrawerDescription>{strings.leaveBlank}</DrawerDescription>
           </DrawerHeader>
           <div className="space-y-4 px-6 pb-4">
             <div className="mb-2 flex gap-2 overflow-x-auto pb-2">
@@ -1287,7 +1305,7 @@ export default function BookingsPage() {
                   );
                 })
               ) : (
-                <Card className="border-border/60 bg-card/60 col-span-2 rounded-3xl p-4 text-center text-sm text-muted-foreground">
+                <Card className="border-border/60 bg-card/60 text-muted-foreground col-span-2 rounded-3xl p-4 text-center text-sm">
                   No free slots for this day
                 </Card>
               )}
@@ -1299,7 +1317,9 @@ export default function BookingsPage() {
                 id="manual-name"
                 value={manualName ?? ""}
                 onChange={(event) =>
-                  setManualName(event.target.value.trim() ? event.target.value : null)
+                  setManualName(
+                    event.target.value.trim() ? event.target.value : null,
+                  )
                 }
                 placeholder={strings.optionalName}
               />
@@ -1312,7 +1332,9 @@ export default function BookingsPage() {
                 inputMode="tel"
                 value={manualPhone ?? ""}
                 onChange={(event) =>
-                  setManualPhone(event.target.value.trim() ? event.target.value : null)
+                  setManualPhone(
+                    event.target.value.trim() ? event.target.value : null,
+                  )
                 }
                 placeholder={strings.optionalPhone}
               />
